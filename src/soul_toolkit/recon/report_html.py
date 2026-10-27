@@ -557,9 +557,14 @@ def render_html(r: HostResult) -> str:
     # -- where to start
     if top:
         body = f'<ol class="leads">{"".join(_lead_card(i, x) for i, x in enumerate(top, 1))}</ol>'
+    elif not r.services:
+        body = ('<div class="card empty"><strong>Nothing answered.</strong> Check the target IP (copy it again '
+                "from the room page) and that your VPN is connected (<code>ip -br addr show tun0</code> should "
+                "show an address), then run again. Still nothing? Try a slower sweep with "
+                "<code>--min-rate 300</code>.</div>")
     else:
-        body = ('<div class="card empty"><strong>Nothing stood out.</strong> Re-run without <code>--quick</code> / '
-                "<code>-p</code> to sweep every port, and browse any web service by hand.</div>")
+        body = ('<div class="card empty"><strong>Nothing stood out.</strong> Read the nmap output for each open '
+                "port below, and browse any web service by hand.</div>")
     add(_section("where-to-start", "Where to start", body,
                  hint="The most promising leads across all services, best first."))
 
@@ -567,8 +572,8 @@ def render_html(r: HostResult) -> str:
     if r.services:
         ports = _ports_table(r.services)
     else:
-        ports = ('<div class="card empty">No open ports found. If the host is up, try <code>--ports</code> or a '
-                 "slower <code>--min-rate</code>.</div>")
+        ports = ('<div class="card empty">No open ports found. Check the target IP and that the VPN is up; if '
+                 "the host is up, try <code>--ports</code> or a slower <code>--min-rate</code>.</div>")
     add(_section("ports", "Open ports", ports, count=len(r.services)))
 
     # -- findings

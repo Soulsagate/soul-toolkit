@@ -162,7 +162,8 @@ def test_html_partial_report_banner():
 
 def test_html_empty_result():
     out = render_html(HostResult("10.10.10.10"))
-    assert "Nothing stood out" in out and "No open ports found" in out and "No findings" in out
+    assert "Nothing answered" in out and "No open ports found" in out and "No findings" in out
+    assert "ip -br addr show tun0" in out and "--quick" not in out
     assert 'class="toolbar"' not in out  # nothing to filter
     assert 'id="scripts"' not in out and 'id="commands"' not in out
     p = _Balance()

@@ -183,6 +183,8 @@ def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path, result: HostResult)
             log.ok(f"Open ports: {', '.join(map(str, ports))}")
         else:
             log.warn("No open TCP ports found.")
+            log.info("Check the target IP (copy it again from the room page) and that the VPN is up "
+                     "(ip -br addr show tun0). Still nothing? Try a slower sweep: --min-rate 300")
     result.incomplete.remove("TCP port sweep")
 
     # ---- TCP service scan ---------------------------------------------------

@@ -76,7 +76,13 @@ def test_report_where_to_start_section():
 
 
 def test_report_where_to_start_empty():
-    assert "_Nothing stood out._" in render_markdown(HostResult("10.10.10.10"))
+    # nothing answered at all: point at the usual causes (wrong IP, VPN down), not at flags
+    md = render_markdown(HostResult("10.10.10.10"))
+    assert "_Nothing answered._" in md and "ip -br addr show tun0" in md and "--min-rate 300" in md
+    assert "--quick" not in md
+    # ports but no leads: no advice about flags that weren't used
+    md = render_markdown(HostResult("10.10.10.10", services=[Service(8000, name="unknown")]))
+    assert "_Nothing stood out._" in md and "--quick" not in md
 
 
 def test_ftp_webroot_lead(tmp_path, monkeypatch):

@@ -79,9 +79,14 @@ def render_markdown(r: HostResult) -> str:
                 add("")
                 add(_indent(_fence(lead.command, "bash"), "   "))
             add("")
+    elif not r.services:
+        add("_Nothing answered._ Check the target IP (copy it again from the room page) and that your "
+            "VPN is connected (`ip -br addr show tun0` should show an address), then run again. "
+            "Still nothing? Try a slower sweep with `--min-rate 300`.")
+        add("")
     else:
-        add("_Nothing stood out._ Re-run without `--quick`/`-p` to sweep every port, "
-            "and browse any web service by hand.")
+        add("_Nothing stood out._ Read the nmap output for each open port below, and browse any web "
+            "service by hand.")
         add("")
 
     add("## Open ports")
@@ -93,7 +98,8 @@ def render_markdown(r: HostResult) -> str:
             name = s.name + (" (ssl)" if s.tunnel == "ssl" else "")
             add(f"| {s.label} | {_cell(name)} | {_cell(s.banner)} |")
     else:
-        add("_No open ports found._ If the host is up, try `--ports` or a slower `--min-rate`.")
+        add("_No open ports found._ Check the target IP and that the VPN is up; if the host is up, try "
+            "`--ports` or a slower `--min-rate`.")
     add("")
 
     add("## Findings")
