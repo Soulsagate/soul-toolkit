@@ -18,6 +18,16 @@ install commands that work on every major distro, and runs that tell you where y
   first scan, reading the results, everyday commands, updating, and troubleshooting for the
   errors new users actually hit. Linked from the top of the README.
 
+- **SMB share access.** After listing shares with a null session, the `smb` module checks
+  whether each share (except IPC$) can actually be read, using one
+  `smbclient //HOST/SHARE -N -c ls` per share, with a 20-second timeout each. The share table in
+  `report.md` and `report.html` gets an Access column (READ / NO ACCESS, or TIMED OUT / UNKNOWN
+  when it can't tell). A non-default share confirmed readable now ranks just below anonymous
+  FTP in "Where to start". If no non-default share is readable, the lead drops to a low "come
+  back with credentials" one. It is a read check only: write access is never tested and nothing
+  is created on the target, which is why smbmap's permission check (it writes a temporary
+  directory) isn't used.
+
 - Every run now ends by printing the full folder its results were saved in (home shown as `~`,
   the sudo user's home under `sudo`) and a copy-paste `xdg-open` / `open` command for the HTML
   report. The README's Output section explains where results go, how to open them, and how to

@@ -135,8 +135,11 @@ def test_vhost_fuzzing_finds_dev(result):
 def test_null_session_smb(result):
     r, _ = result
     smb = next(f for f in r.findings if f.title == "Null session can list SMB shares")
-    assert "public" in {s["name"] for s in smb.data["shares"]}
-    assert any(x.command == f"smbclient //{TARGET}/public -N" for x in r.leads)
+    access = {s["name"]: s.get("access") for s in smb.data["shares"]}
+    assert access["public"] == "READ"  # the guest share, checked with a read-only `ls`
+    assert access["IPC$"] is None      # IPC$ is never checked
+    lead = next(x for x in r.leads if x.command == f"smbclient //{TARGET}/public -N")
+    assert lead.kind == "smb-readable"
 
 
 @pytest.mark.skipif(not shutil.which("showmount"), reason="showmount not installed")
@@ -152,6 +155,8 @@ def test_where_to_start_and_reports(result):
     assert "web-git" in top and "ftp-anon" in top
     md = (out / "report.md").read_text()
     assert md.index("## Where to start") < md.index("## Open ports")
+    if shutil.which("smbclient"):
+        assert "| `public` | Disk | READ | Public files |" in md
     assert (out / "report.html").read_text().startswith("<!doctype html>")
     assert json.loads((out / "findings.json").read_text())["target"] == TARGET
     assert 'room: "Soul Lab"' in (out / "writeup.md").read_text()

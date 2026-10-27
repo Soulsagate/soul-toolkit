@@ -179,7 +179,7 @@ results of an earlier run.
 | `web` | HTTP/HTTPS | fingerprint (server, title, generator), vhost-redirect detection, vhost fuzzing (`ffuf`, else `gobuster vhost`) when the target is a hostname or redirects to one - with the wildcard size filtered out and the `/etc/hosts` line to add, `robots.txt`, exposed `.git`, `gobuster` content discovery with extensions picked from the fingerprint (PHP → `php,txt,bak`, ASP.NET → `aspx,asp,txt`, Java → `jsp,do,txt`), one level of recursion into found directories, automatic wildcard handling and a time cap per port, flags interesting paths |
 | `ftp` | FTP | anonymous login check + root listing (nothing is downloaded), known-backdoor version check |
 | `ssh` | SSH | version notes (e.g. CVE-2018-15473 user enumeration on OpenSSH ≤ 7.7) |
-| `smb` | 139 / 445 | null-session share listing via `smbclient`, message-signing check |
+| `smb` | 139 / 445 | null-session share listing via `smbclient`, then a read check on each share (one `ls`, never anything that writes) shown as READ / NO ACCESS; a readable non-default share ranks near the top. Message-signing check |
 | `nfs` | NFS (2049 / mountd) | `showmount -e` export listing; exports open to everyone are flagged with a ready read-only `mount` command |
 | `smtp` | SMTP (25 / 465 / 587) | banner + EHLO capabilities; checks whether VRFY / EXPN tell real users from made-up ones (one probe each) and hands you the `smtp-user-enum` command |
 | `snmp` | SNMP (161/udp) | tries the default `public` / `private` communities (`onesixtyone`, else `snmpwalk`), then reads system info, process command lines that look like they carry passwords, and Windows users |

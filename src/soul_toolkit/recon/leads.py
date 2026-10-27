@@ -24,9 +24,10 @@ SCORES: dict[str, int] = {
     "ftp-webroot": 88,           # anonymous FTP that looks like the web root
     "nfs-world": 90,             # NFS export anyone can mount
     "ftp-anon": 85,              # anonymous FTP with files
+    "smb-readable": 84,          # a non-default share confirmed readable with a null session
     "snmp-community": 82,        # default SNMP community readable
     "exploit-rce": 80,           # Exploit-DB has a remote code/command execution match
-    "smb-share": 75,             # a readable-looking share via null session
+    "smb-share": 75,             # a non-default share via null session, read access unconfirmed
     "web-vhosts": 75,            # extra virtual hosts discovered
     "web-vhost": 70,             # redirect to a name-based vhost
     "mysql-anon": 70,            # anonymous database login
@@ -39,6 +40,7 @@ SCORES: dict[str, int] = {
     "smtp-vrfy": 50,             # SMTP VRFY/EXPN enumerate usernames
     "web-robots": 45,
     "smb-enum": 40,              # SMB answers but no share listing
+    "smb-locked": 38,            # shares listed, none of the non-default ones readable anonymously
     "ldap-anon": 45,             # anonymous LDAP read check
     "rdp-bluekeep": 35,          # old Windows build exposing RDP
     "exploit-range": 35,         # Exploit-DB title matches whose version range we can't confirm

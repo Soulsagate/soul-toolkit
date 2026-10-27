@@ -173,8 +173,13 @@ def _finding_body(data: dict) -> str:
         rows += ["", "Read one with `searchsploit -x <EDB-ID>`, copy it here with `searchsploit -m <EDB-ID>`."]
         return "\n".join(rows)
     if "shares" in data:
-        rows = ["| Share | Type | Comment |", "|---|---|---|"]
-        rows += [f"| `{s['name']}` | {s['type']} | {_cell(s['comment'])} |" for s in data["shares"]]
+        if not any("access" in s for s in data["shares"]):  # findings.json from before the read check
+            rows = ["| Share | Type | Comment |", "|---|---|---|"]
+            rows += [f"| `{s['name']}` | {s['type']} | {_cell(s['comment'])} |" for s in data["shares"]]
+            return "\n".join(rows)
+        rows = ["| Share | Type | Access | Comment |", "|---|---|---|---|"]
+        rows += [f"| `{s['name']}` | {s['type']} | {s.get('access') or '-'} | {_cell(s['comment'])} |"
+                 for s in data["shares"]]
         return "\n".join(rows)
     # Generic shapes any module can use: {"table": {"headers": [...], "rows": [[...]]}} and/or {"lines": [...]}
     parts = []

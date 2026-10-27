@@ -400,6 +400,14 @@ def _status(code: object) -> str:
     return f'<span class="st{cls}">{text}</span>'
 
 
+def _access(access: str) -> str:
+    """READ / NO ACCESS badge for an SMB share ("-" for ones that weren't checked, like IPC$)."""
+    if not access:
+        return '<span class="muted">-</span>'
+    cls = {"READ": " st-2", "NO ACCESS": " st-4"}.get(access, " st-3")
+    return f'<span class="st{cls}">{_e(access)}</span>'
+
+
 def _finding_body(data: dict) -> str:
     if not data:
         return ""
@@ -423,8 +431,12 @@ def _finding_body(data: dict) -> str:
         if key in data:
             return _code("\n".join(data[key]), label, scroll=True)
     if "shares" in data:
-        rows = [[f"<code>{_e(s['name'])}</code>", _e(s["type"]), _e(s["comment"])] for s in data["shares"]]
-        return _table(["Share", "Type", "Comment"], rows)
+        if not any("access" in s for s in data["shares"]):  # findings.json from before the read check
+            rows = [[f"<code>{_e(s['name'])}</code>", _e(s["type"]), _e(s["comment"])] for s in data["shares"]]
+            return _table(["Share", "Type", "Comment"], rows)
+        rows = [[f"<code>{_e(s['name'])}</code>", _e(s["type"]), _access(s.get("access", "")), _e(s["comment"])]
+                for s in data["shares"]]
+        return _table(["Share", "Type", "Access", "Comment"], rows)
     out = ""
     if "table" in data:
         out += _table(data["table"]["headers"], [[_e(c) for c in row] for row in data["table"]["rows"]])

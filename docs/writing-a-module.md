@@ -140,10 +140,10 @@ Add it to `all_modules()` in
 
 Modules never choose their own rank. Add the lead kind to `SCORES` in
 [`src/soul_toolkit/recon/leads.py`](../src/soul_toolkit/recon/leads.py), next to leads of similar
-value - readable rsync modules are about as good as an SMB share anyone can open:
+value - readable rsync modules are about as good as an SMB share you can reach with a null session:
 
 ```python
-    "smb-share": 75,             # a readable-looking share via null session
+    "smb-share": 75,             # a non-default share via null session, read access unconfirmed
     "rsync-module": 75,          # rsync module readable without a password
 ```
 

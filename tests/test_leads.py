@@ -95,13 +95,20 @@ def test_ftp_webroot_lead(tmp_path, monkeypatch):
 def test_smb_share_lead(tmp_path, monkeypatch):
     out = "Disk|print$|Printer Drivers\nDisk|files|Team files\nDisk|backup|\nIPC|IPC$|IPC Service\n"
     monkeypatch.setattr(runner, "which", lambda tool: "/usr/bin/" + tool)
-    monkeypatch.setattr(runner, "run", lambda cmd, timeout=None: runner.CommandResult(cmd, 0, out, "", 0.1))
+
+    def fake(cmd, timeout=None):
+        if "-L" in cmd:
+            return runner.CommandResult(cmd, 0, out, "", 0.1)
+        # the read check couldn't tell either way -> the share stays an unconfirmed lead
+        return runner.CommandResult(cmd, 1, "NT_STATUS_CONNECTION_REFUSED listing \\*\n", "", 0.1)
+
+    monkeypatch.setattr(runner, "run", fake)
     ctx = make_ctx(tmp_path, [Service(445, name="microsoft-ds")])
     smb.SmbModule().run(ctx, Service(445, name="microsoft-ds"))
     kinds = {x.kind: x for x in ctx.result.leads}
     assert kinds["smb-share"].command == "smbclient //10.10.10.10/files -N"
     assert "enum4linux-ng" in kinds["smb-enum"].command
-    assert any("backup" in h for h in ctx.result.hints)
+    assert any("backup" in h and "unconfirmed" in h for h in ctx.result.hints)
 
 
 FIXTURE_XML = (Path(__file__).parent / "fixtures" / "services.xml").read_text()
