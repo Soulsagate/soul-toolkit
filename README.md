@@ -183,6 +183,7 @@ results of an earlier run.
 | `smb` | 139 / 445 | null-session share listing via `smbclient`, then a read check on each share (one `ls`, never anything that writes) shown as READ / NO ACCESS; a readable non-default share ranks near the top. Message-signing check |
 | `nfs` | NFS (2049 / mountd) | `showmount -e` export listing; exports open to everyone are flagged with a ready read-only `mount` command |
 | `smtp` | SMTP (25 / 465 / 587) | banner + EHLO capabilities; checks whether VRFY / EXPN tell real users from made-up ones (one probe each) and hands you the `smtp-user-enum` command |
+| `mail` | POP3 / IMAP (110 / 143 / 993 / 995) | banner and capabilities from nmap, flags servers that take passwords in clear text (no STLS / STARTTLS); a "keep the mail server for when you have credentials" lead with ready `curl` / `nc` commands. No login attempts |
 | `snmp` | SNMP (161/udp) | tries the default `public` / `private` communities (`onesixtyone`, else `snmpwalk`), then reads system info, process command lines that look like they carry passwords, and Windows users |
 | `mysql` | MySQL / MariaDB (3306) | version from the server greeting; tries `root` and the anonymous account with an empty password (one login each, nothing else) |
 | `postgres` | PostgreSQL (5432) | asks how user `postgres` must log in: `trust` (no password at all) is flagged, otherwise the method (SCRAM / md5) is noted |

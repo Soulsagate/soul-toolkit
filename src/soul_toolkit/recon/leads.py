@@ -50,6 +50,7 @@ SCORES: dict[str, int] = {
     "rescan": 15,                # the scan itself was limited
     "udp": 12,                   # UDP wasn't scanned
     "winrm-later": 12,           # WinRM: shell once you have credentials
+    "mail-later": 11,            # POP3/IMAP: mailboxes often hold more credentials than a shell
     "ssh-later": 10,
     "rdp-later": 10,
     "db-later": 8,               # database that wants a password

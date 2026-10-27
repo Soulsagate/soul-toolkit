@@ -99,6 +99,7 @@ def all_modules() -> list[Module]:
     from soul_toolkit.recon.modules.exploits import ExploitsModule
     from soul_toolkit.recon.modules.ftp import FtpModule
     from soul_toolkit.recon.modules.ldap import LdapModule
+    from soul_toolkit.recon.modules.mail import MailModule
     from soul_toolkit.recon.modules.mysql import MysqlModule
     from soul_toolkit.recon.modules.nfs import NfsModule
     from soul_toolkit.recon.modules.postgres import PostgresModule
@@ -112,8 +113,8 @@ def all_modules() -> list[Module]:
     from soul_toolkit.recon.modules.winrm import WinrmModule
 
     return [
-        WebModule(), FtpModule(), SshModule(), SmbModule(), NfsModule(), SmtpModule(), SnmpModule(), MysqlModule(),
-        PostgresModule(), RedisModule(), RdpModule(), WinrmModule(), LdapModule(),
+        WebModule(), FtpModule(), SshModule(), SmbModule(), NfsModule(), SmtpModule(), MailModule(), SnmpModule(),
+        MysqlModule(), PostgresModule(), RedisModule(), RdpModule(), WinrmModule(), LdapModule(),
         ExploitsModule(),  # last: it reads every service, so its leads land after the specific ones
     ]
 

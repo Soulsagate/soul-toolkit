@@ -19,6 +19,7 @@ PLATFORMS = {".thm": "TryHackMe", ".htb": "Hack The Box"}
 SERVICE_TAGS = {
     "microsoft-ds": "smb", "netbios-ssn": "smb", "ms-wbt-server": "rdp", "domain": "dns",
     "ldap": "ldap", "kerberos-sec": "kerberos", "mysql": "mysql", "postgresql": "postgres",
+    "pop3": "mail", "imap": "mail", "pop3s": "mail", "imaps": "mail",
     # NFS's RPC helpers would each become a useless tag; they all mean "NFS is here"
     "mountd": "nfs", "nlockmgr": "nfs", "rquotad": "nfs", "nfs_acl": "nfs", "status": "nfs", "rpcbind": "rpc",
 }

@@ -11,6 +11,18 @@ All notable changes to this project. The format is based on
 Fixes from the first run by someone other than the author: a fresh Linux Mint Debian Edition 6
 install against a TryHackMe box with SSH, HTTP, POP3 and IMAP.
 
+### Added
+
+- **`mail` module** for POP3, IMAP, POP3S and IMAPS (ports 110, 143, 993, 995, or nmap's
+  `pop3` / `imap` / `pop3s` / `imaps`). It reports the server and its capabilities from nmap's
+  `pop3-capabilities` / `imap-capabilities` (cleaned of the greeting words nmap mixes in), and
+  flags a server that takes passwords in clear text with no STLS / STARTTLS (low). One lead per
+  host, "Keep the mail server for when you have credentials", ranks just above the SSH one,
+  since mailboxes often hold more credentials. It comes with ready commands to read a mailbox by
+  hand (`curl -u '<user>:<password>' pop3://...`, or `nc` then `USER` / `PASS` / `RETR`). Recon
+  only: it works from nmap's results and never logs in or guesses passwords. Writeups get a
+  `mail` tag.
+
 ### Fixed
 
 - **No more `<IP>`-style placeholders to trip over.** The tester typed `<IP>` literally and bash
