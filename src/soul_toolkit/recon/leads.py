@@ -21,6 +21,7 @@ SCORES: dict[str, int] = {
     "ftp-webroot": 88,           # anonymous FTP that looks like the web root
     "nfs-world": 90,             # NFS export anyone can mount
     "ftp-anon": 85,              # anonymous FTP with files
+    "snmp-community": 82,        # default SNMP community readable
     "exploit-rce": 80,           # Exploit-DB has a remote code/command execution match
     "smb-share": 75,             # a readable-looking share via null session
     "web-vhosts": 75,            # extra virtual hosts discovered

@@ -77,10 +77,14 @@ def all_modules() -> list[Module]:
     from soul_toolkit.recon.modules.nfs import NfsModule
     from soul_toolkit.recon.modules.smb import SmbModule
     from soul_toolkit.recon.modules.smtp import SmtpModule
+    from soul_toolkit.recon.modules.snmp import SnmpModule
     from soul_toolkit.recon.modules.ssh import SshModule
     from soul_toolkit.recon.modules.web import WebModule
 
-    return [WebModule(), FtpModule(), SshModule(), SmbModule(), NfsModule(), SmtpModule(), ExploitsModule()]
+    return [
+        WebModule(), FtpModule(), SshModule(), SmbModule(), NfsModule(), SmtpModule(), SnmpModule(),
+        ExploitsModule(),  # last: it reads every service, so its leads land after the specific ones
+    ]
 
 
 def select_modules(names: list[str] | None) -> list[Module]:

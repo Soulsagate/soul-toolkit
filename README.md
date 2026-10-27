@@ -34,6 +34,7 @@ It runs recon in stages, and each stage decides what the next one does:
 | `smb` | 139 / 445 | null-session share listing via `smbclient`, message-signing check |
 | `nfs` | NFS (2049 / mountd) | `showmount -e` export listing; exports open to everyone are flagged with a ready read-only `mount` command |
 | `smtp` | SMTP (25 / 465 / 587) | banner + EHLO capabilities; checks whether VRFY / EXPN tell real users from made-up ones (one probe each) and hands you the `smtp-user-enum` command |
+| `snmp` | SNMP (161/udp) | tries the default `public` / `private` communities (`onesixtyone`, else `snmpwalk`), then reads system info, process command lines that look like they carry passwords, and Windows users |
 | `exploits` | any service with a product + version | `searchsploit` lookup, deduped across ports, top matches with EDB-IDs (remote exploits first) |
 
 Each module is one small file in [`src/soul_toolkit/recon/modules/`](src/soul_toolkit/recon/modules/). Adding a service = one class with `matches()` and `run()`.
@@ -76,6 +77,7 @@ Requires **Python 3.9+** and **Linux**. The toolkit wraps existing tools rather 
 | `ffuf` | `web` vhost fuzzing (falls back to gobuster) | `sudo pacman -S ffuf` | `sudo apt install ffuf` |
 | `smbclient` | `smb` share listing | `sudo pacman -S smbclient` | `sudo apt install smbclient` |
 | `showmount` | `nfs` export listing | `sudo pacman -S nfs-utils` | `sudo apt install nfs-common` |
+| `snmpwalk`, `onesixtyone` | `snmp` checks | `sudo pacman -S net-snmp onesixtyone` | `sudo apt install snmp onesixtyone` |
 | `searchsploit` | `exploits` lookups | `yay -S exploitdb` | `sudo apt install exploitdb` |
 | SecLists | better wordlists (optional) | `yay -S seclists` | `sudo apt install seclists` |
 
