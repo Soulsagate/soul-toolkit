@@ -51,10 +51,13 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
     mods.add_argument("--vhost-wordlist", metavar="FILE",
                       help="wordlist for vhost fuzzing (default: SecLists subdomains-top1million-5000.txt if found)")
     mods.add_argument("-w", "--wordlist", help="wordlist for gobuster (default: SecLists common.txt if found)")
-    mods.add_argument("-x", "--extensions", default="", help="extensions for gobuster, e.g. php,txt,html")
+    mods.add_argument("-x", "--extensions", default="",
+                      help="extensions for gobuster, e.g. php,txt,html (default: picked from the fingerprint)")
+    mods.add_argument("--no-recurse", action="store_true",
+                      help="don't run gobuster again inside the directories it finds")
     mods.add_argument("-t", "--threads", type=int, default=30, help="gobuster threads (default 30)")
     mods.add_argument("--brute-timeout", type=int, default=600, metavar="SEC",
-                      help="max seconds per gobuster run (default 600)")
+                      help="max seconds of content discovery per web port, recursion included (default 600)")
 
     out = p.add_argument_group("output")
     out.add_argument("-o", "--output", default="results", help="output directory (default: ./results)")
@@ -107,6 +110,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
             threads=max(1, args.threads),
             brute_timeout=max(10, args.brute_timeout),
             extensions=args.extensions,
+            recurse=not args.no_recurse,
             vhosts=not args.no_vhost,
             vhost_wordlist=args.vhost_wordlist,
         ),

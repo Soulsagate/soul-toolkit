@@ -26,7 +26,8 @@ class Options:
     threads: int = 30
     brute_timeout: int = 600
     http_timeout: int = 8
-    extensions: str = ""
+    extensions: str = ""  # empty = pick from the fingerprint
+    recurse: bool = True
     vhosts: bool = True
     vhost_wordlist: str | None = None
 

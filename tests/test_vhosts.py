@@ -196,7 +196,7 @@ def test_module_without_tools_warns(tmp_path, monkeypatch):
 def test_vhost_fuzz_only_runs_with_a_name(tmp_path, monkeypatch, vhost_server):
     port = vhost_server()
     seen = []
-    monkeypatch.setattr(web.WebModule, "_gobuster", lambda self, ctx, svc, base: [])
+    monkeypatch.setattr(web.WebModule, "_content_discovery", lambda self, ctx, svc, base, page: [])
     monkeypatch.setattr(web.WebModule, "_vhost_fuzz", lambda self, ctx, svc, base, domain: seen.append(domain) or [])
     web.WebModule().run(make_ctx(tmp_path, target="127.0.0.1"), Service(port, name="http"))
     assert seen == []  # plain IP, no redirect: nothing to fuzz

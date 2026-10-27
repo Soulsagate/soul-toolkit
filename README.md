@@ -27,7 +27,7 @@ It runs recon in stages, and each stage decides what the next one does:
 
 | Module | Triggers on | Does |
 |---|---|---|
-| `web` | HTTP/HTTPS | fingerprint (server, title, generator), vhost-redirect detection, vhost fuzzing (`ffuf`, else `gobuster vhost`) when the target is a hostname or redirects to one - with the wildcard size filtered out and the `/etc/hosts` line to add, `robots.txt`, exposed `.git`, `gobuster` content discovery with automatic wildcard handling, flags interesting paths |
+| `web` | HTTP/HTTPS | fingerprint (server, title, generator), vhost-redirect detection, vhost fuzzing (`ffuf`, else `gobuster vhost`) when the target is a hostname or redirects to one - with the wildcard size filtered out and the `/etc/hosts` line to add, `robots.txt`, exposed `.git`, `gobuster` content discovery with extensions picked from the fingerprint (PHP → `php,txt,bak`, ASP.NET → `aspx,asp,txt`, Java → `jsp,do,txt`), one level of recursion into found directories, automatic wildcard handling and a time cap per port, flags interesting paths |
 | `ftp` | FTP | anonymous login check + root listing (nothing is downloaded), known-backdoor version check |
 | `ssh` | SSH | version notes (e.g. CVE-2018-15473 user enumeration on OpenSSH ≤ 7.7) |
 | `smb` | 139 / 445 | null-session share listing via `smbclient`, message-signing check |
@@ -117,9 +117,10 @@ modules:
   --no-vhost              skip vhost fuzzing only
   --vhost-wordlist FILE   vhost wordlist (default: SecLists subdomains-top1million-5000.txt, else bundled)
   -w, --wordlist FILE     gobuster wordlist (default: SecLists common.txt, else a small bundled list)
-  -x, --extensions EXT    gobuster extensions, e.g. php,txt,html
+  -x, --extensions EXT    gobuster extensions, e.g. php,txt,html (default: picked from the fingerprint)
+  --no-recurse            don't re-run gobuster inside found directories
   -t, --threads N         gobuster threads (default 30)
-  --brute-timeout SEC     max seconds per gobuster run (default 600)
+  --brute-timeout SEC     max seconds of content discovery per web port, recursion included (default 600)
 
 output:
   -o, --output DIR        output directory (default ./results)
@@ -153,6 +154,7 @@ results/<target>/
 ├── nmap-ports.xml       # raw stage 1 output
 ├── nmap-services.xml    # raw stage 2 output
 ├── gobuster-<port>.txt  # raw gobuster output per web port
+├── gobuster-<port>-<dir>.txt  # one per directory recursed into
 └── vhosts-<port>.json   # raw ffuf vhost results (.txt when gobuster was used)
 ```
 
