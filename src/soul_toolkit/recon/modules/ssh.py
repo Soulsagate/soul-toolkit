@@ -32,5 +32,9 @@ class SshModule(Module):
             findings.append(Finding(self.name, svc.port, f"OpenSSH {ver[0]}.{ver[1]} - username enumeration",
                                     "low", "OpenSSH through 7.7 is affected by CVE-2018-15473."))
 
-        ctx.hint(f"SSH on {svc.port}: keep it for later - look for creds/keys elsewhere before brute-forcing.")
+        port = f" -p {svc.port}" if svc.port != 22 else ""
+        ctx.lead("ssh-later", svc.port, "Keep SSH for when you have credentials",
+                 "Usernames, passwords and keys found elsewhere usually work here; "
+                 "brute-forcing is slow and rarely the intended path.",
+                 f"ssh{port} <user>@{ctx.target}")
         return findings

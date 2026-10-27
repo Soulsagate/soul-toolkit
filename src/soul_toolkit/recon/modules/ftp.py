@@ -11,6 +11,9 @@ from soul_toolkit.recon.modules import Context, Module
 
 MAX_LIST = 50
 
+WEB_FILE_EXT = (".php", ".html", ".htm", ".asp", ".aspx", ".jsp")
+WEB_DIR_NAMES = {"www", "html", "public_html", "wwwroot", "htdocs", "web"}
+
 # Top-level names that only exist together at a real Linux filesystem root.
 FS_ROOT_MARKERS = {"bin", "etc", "usr", "var", "home", "root", "proc", "sbin", "lib", "dev", "boot"}
 
@@ -103,10 +106,16 @@ class FtpModule(Module):
                 findings.append(Finding(self.name, svc.port, "FTP root is the server's filesystem root (/)", "high",
                                         "Anonymous users can read every world-readable file on the system."))
                 ctx.log.ok(f"{svc.label} ftp: FTP root is the whole filesystem")
-                ctx.hint(f"Browse it interactively (user: anonymous): ftp {ctx.target} {svc.port} - "
-                         "don't mirror it, /proc and /dev will hang wget.")
-            else:
-                ctx.hint(f"Grab everything from anonymous FTP: wget -m ftp://anonymous:anonymous@{url_host}/")
+                ctx.lead("ftp-fsroot", svc.port, "Browse the server's whole filesystem over anonymous FTP",
+                         "The FTP root is / - look in /home/*/ (SSH keys, notes), /etc and /var/www for config "
+                         "and backups. Log in as `anonymous`; don't mirror it, /proc and /dev will hang wget.",
+                         f"ftp {ctx.target} {svc.port}")
+            elif entries:
+                names = ", ".join(e.name for e in entries[:5]) + (", ..." if n > 5 else "")
+                ctx.lead("ftp-anon", svc.port, "Download everything from anonymous FTP",
+                         f"Anonymous login works and the root has {n} entr{'y' if n == 1 else 'ies'}: {names}.",
+                         f"wget -m ftp://anonymous:anonymous@{url_host}/")
+                self._webroot_lead(ctx, svc, entries)
 
             writable = [e for e in entries if e.is_dir and e.world_writable]
             if writable:
@@ -114,12 +123,33 @@ class FtpModule(Module):
                                         ", ".join(e.name for e in writable) + " - writable on disk; anonymous "
                                         "upload may still be disabled in the server config.",
                                         {"listing": [e.raw for e in writable]}))
-                ctx.hint("Check if anonymous upload works: cd into the writable dir in ftp "
-                         "and try `put` with a test file.")
+                ctx.lead("ftp-writable", svc.port, f"Test anonymous upload into {writable[0].name}/",
+                         "The directory is world-writable on disk; the FTP server may still refuse uploads.",
+                         f"echo test > test.txt && curl -T test.txt ftp://anonymous:anonymous@{url_host}/"
+                         f"{writable[0].name}/")
         else:
             findings.append(Finding(self.name, svc.port, "Anonymous FTP login refused", "info", svc.banner))
 
         if svc.product.lower() == "vsftpd" and svc.version.startswith("2.3.4"):
             findings.append(Finding(self.name, svc.port, "vsftpd 2.3.4 - known backdoored version", "high",
                                     "CVE-2011-2523 (smiley-face backdoor)."))
+            ctx.lead("backdoor", svc.port, "Research the vsftpd 2.3.4 backdoor",
+                     "This exact release shipped with a backdoor (CVE-2011-2523). Read how it works first.",
+                     "searchsploit vsftpd 2.3.4")
         return findings
+
+    def _webroot_lead(self, ctx: Context, svc: Service, entries: list[Entry]) -> None:
+        """Anonymous FTP holding web files next to a web server: the share may be the web root."""
+        web = [s for s in ctx.result.services if s.is_web]
+        files = [e.name for e in entries if not e.is_dir and e.name.lower().endswith(WEB_FILE_EXT)]
+        dirs = [e.name for e in entries if e.is_dir and e.name.lower() in WEB_DIR_NAMES]
+        if not web or not (files or dirs):
+            return
+        w = web[0]
+        scheme = "https" if w.is_tls else "http"
+        port = "" if w.port == (443 if w.is_tls else 80) else f":{w.port}"
+        probe = files[0] if files else dirs[0] + "/"
+        ctx.lead("ftp-webroot", svc.port, f"Check whether anonymous FTP is the web root on {w.port}",
+                 f"The FTP share holds web content ({', '.join((files + dirs)[:3])}). If the web server on "
+                 f"{w.port} serves it, anything readable (or uploadable) here is reachable over HTTP.",
+                 f"curl -si {scheme}://{ctx.host_for_url()}{port}/{probe}")

@@ -13,7 +13,8 @@ from pathlib import Path
 
 from soul_toolkit.core import runner
 from soul_toolkit.core.log import Logger
-from soul_toolkit.core.models import Finding, HostResult, Service
+from soul_toolkit.core.models import Finding, HostResult, Lead, Service
+from soul_toolkit.recon.leads import score_for
 
 
 @dataclass
@@ -46,6 +47,10 @@ class Context:
     def hint(self, text: str) -> None:
         if text not in self.result.hints:
             self.result.hints.append(text)
+
+    def lead(self, kind: str, port: int, title: str, why: str, command: str = "") -> None:
+        """Report something worth trying next. Its rank comes from `kind` (see recon/leads.py)."""
+        self.result.leads.append(Lead(kind, port, title, why, command, score_for(kind)))
 
     def host_for_url(self) -> str:
         return f"[{self.target}]" if ":" in self.target else self.target

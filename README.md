@@ -21,7 +21,7 @@ It runs recon in stages, and each stage decides what the next one does:
 | 1. Port sweep | `nmap` across all 65535 TCP ports (or top 1000 with `--quick`) |
 | 2. Service scan | `nmap -sV -sC` on only the open ports |
 | 3. Service modules | follow-ups chosen per service (see below) |
-| 4. Report | `report.md` + `findings.json`, findings sorted by severity |
+| 4. Report | `report.md` + `findings.json`: a ranked **Where to start** list (best leads across all services, each with why and a copy-paste command), then findings by severity |
 
 ### Service modules
 

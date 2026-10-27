@@ -12,7 +12,7 @@ from soul_toolkit.core import runner
 from soul_toolkit.core.log import Logger
 from soul_toolkit.core.models import Finding, HostResult
 from soul_toolkit.core.target import safe_dirname
-from soul_toolkit.recon import nmap
+from soul_toolkit.recon import leads, nmap
 from soul_toolkit.recon.modules import Context, Module, Options
 from soul_toolkit.recon.report import write_reports
 
@@ -103,7 +103,7 @@ def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path) -> HostResult:
             result.status = host.status
         if not ports:
             log.warn("No open TCP ports found.")
-            return _finish(result, outdir, t0, log)
+            return _finish(cfg, result, outdir, t0, log)
         log.ok(f"Open ports: {', '.join(map(str, ports))}")
 
     # ---- Stage 2: service scan ----------------------------------------------
@@ -134,7 +134,18 @@ def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path) -> HostResult:
                 log.error(f"{svc.label} {mod.name}: module crashed: {exc}")
                 result.findings.append(Finding(mod.name, svc.port, "Module error", "info", repr(exc)))
 
-    return _finish(result, outdir, t0, log)
+    return _finish(cfg, result, outdir, t0, log)
+
+
+def print_where_to_start(result: HostResult, log: Logger) -> None:
+    top = result.leads[:leads.WHERE_TO_START]
+    if not top:
+        return
+    log.ok("Where to start:")
+    for i, lead in enumerate(top, 1):
+        log.line(f"    {i}. {lead.title} ({lead.where})")
+        if lead.command:
+            log.line(f"       $ {lead.command}")
 
 
 def _run_nmap(cmd: list[str], xml_path: Path, result: HostResult, log: Logger) -> list[nmap.NmapHost]:
@@ -149,13 +160,15 @@ def _run_nmap(cmd: list[str], xml_path: Path, result: HostResult, log: Logger) -
     return nmap.parse_xml(res.stdout)
 
 
-def _finish(result: HostResult, outdir: Path, t0: float, log: Logger) -> HostResult:
+def _finish(cfg: ReconConfig, result: HostResult, outdir: Path, t0: float, log: Logger) -> HostResult:
     result.duration = time.monotonic() - t0
     result.finished = _now()
+    result.leads = leads.rank(result.leads + leads.host_leads(result, quick=not cfg.full, ports_given=bool(cfg.ports)))
     md, js = write_reports(result, outdir)
     high = sum(1 for f in result.findings if f.severity in ("high", "medium"))
     log.ok(f"Done in {result.duration:.0f}s - {len(result.services)} open port(s), "
            f"{len(result.findings)} finding(s) ({high} medium/high)")
+    print_where_to_start(result, log)
     log.ok(f"Report: {md}")
     log.debug(f"JSON:   {js}")
     return result

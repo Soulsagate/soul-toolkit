@@ -7,6 +7,7 @@ from pathlib import Path
 
 from soul_toolkit import __version__
 from soul_toolkit.core.models import HostResult
+from soul_toolkit.recon import leads as leads_mod
 
 _BADGE = {"high": "🔴 HIGH", "medium": "🟠 MEDIUM", "low": "🟡 LOW", "info": "🔵 INFO"}
 
@@ -20,9 +21,13 @@ def _fmt_duration(seconds: float) -> str:
     return f"{m}m {s:02d}s" if m else f"{s}s"
 
 
-def _fence(text: str) -> str:
+def _fence(text: str, lang: str = "") -> str:
     fence = "````" if "```" in text else "```"
-    return f"{fence}\n{text.rstrip()}\n{fence}"
+    return f"{fence}{lang}\n{text.rstrip()}\n{fence}"
+
+
+def _indent(text: str, prefix: str) -> str:
+    return "\n".join(prefix + line for line in text.splitlines())
 
 
 def render_markdown(r: HostResult) -> str:
@@ -56,6 +61,24 @@ def render_markdown(r: HostResult) -> str:
     add(" · ".join(f"{_BADGE[s]}: {n}" for s, n in counts.items()))
     add("")
 
+    top = r.leads[:leads_mod.WHERE_TO_START]
+    add("## Where to start")
+    add("")
+    if top:
+        add("The most promising leads across all services, best first.")
+        add("")
+        for i, lead in enumerate(top, 1):
+            add(f"{i}. **{lead.title}** ({lead.where})  ")
+            add(f"   {lead.why}")
+            if lead.command:
+                add("")
+                add(_indent(_fence(lead.command, "bash"), "   "))
+            add("")
+    else:
+        add("_Nothing stood out._ Re-run without `--quick`/`-p` to sweep every port, "
+            "and browse any web service by hand.")
+        add("")
+
     add("## Open ports")
     add("")
     if r.services:
@@ -84,10 +107,15 @@ def render_markdown(r: HostResult) -> str:
             add(body)
             add("")
 
-    if r.hints:
-        add("## Suggested next steps")
+    rest = r.leads[leads_mod.WHERE_TO_START:]
+    extra = leads_mod.other_hints(r)
+    if rest or extra:
+        add("## Other leads and ideas")
         add("")
-        for h in r.hints:
+        for lead in rest:
+            cmd = f" `{lead.command}`" if lead.command else ""
+            add(f"- **{lead.title}** ({lead.where}) - {lead.why}{cmd}")
+        for h in extra:
             add(f"- {h}")
         add("")
 

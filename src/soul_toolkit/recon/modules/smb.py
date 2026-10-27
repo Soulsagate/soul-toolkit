@@ -53,12 +53,19 @@ class SmbModule(Module):
             findings.append(Finding(self.name, svc.port, "Null session can list SMB shares", "medium",
                                     ", ".join(s["name"] for s in shares), {"shares": shares}))
             ctx.log.ok(f"{svc.label} smb: {len(shares)} share(s) listed")
-            for s in disks:
-                if not s["name"].endswith("$"):
-                    ctx.hint(f"Try the '{s['name']}' share: smbclient //{ctx.target}/{s['name']} -N")
+            custom = [s for s in disks if not s["name"].endswith("$")]
+            if custom:
+                ctx.lead("smb-share", svc.port, f"Connect to the '{custom[0]['name']}' share with a null session",
+                         f"Anonymous listing shows {len(shares)} share(s): {', '.join(s['name'] for s in shares)}. "
+                         "Non-default shares are where CTF files live.",
+                         f"smbclient //{ctx.target}/{custom[0]['name']} -N")
+            for s in custom[1:]:
+                ctx.hint(f"Try the '{s['name']}' share: smbclient //{ctx.target}/{s['name']} -N")
         else:
             out = (res.stdout + res.stderr).strip()
             findings.append(Finding(self.name, svc.port, "Null-session share listing refused", "info",
                                     out.splitlines()[-1] if out else ""))
-        ctx.hint(f"Deeper SMB enum: enum4linux-ng -A {ctx.target}")
+        ctx.lead("smb-enum", svc.port, "Enumerate users, groups and policies over SMB",
+                 "enum4linux-ng tries null and guest sessions for users, shares and the password policy.",
+                 f"enum4linux-ng -A {ctx.target}")
         return findings

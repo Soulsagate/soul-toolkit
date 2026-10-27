@@ -66,6 +66,22 @@ class Finding:
 
 
 @dataclass
+class Lead:
+    """Something worth trying next, with the reason and a copy-paste command."""
+
+    kind: str
+    port: int
+    title: str
+    why: str
+    command: str = ""
+    score: int = 0
+
+    @property
+    def where(self) -> str:
+        return f"{self.port}/tcp" if self.port else "host"
+
+
+@dataclass
 class HostResult:
     target: str
     address: str = ""
@@ -75,6 +91,7 @@ class HostResult:
     services: list[Service] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
     hints: list[str] = field(default_factory=list)
+    leads: list[Lead] = field(default_factory=list)
     commands: list[str] = field(default_factory=list)
     started: str = ""
     finished: str = ""

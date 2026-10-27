@@ -34,7 +34,8 @@ def test_markdown_report_contents():
     assert md.index("Anonymous FTP login allowed") < md.index("Null session") < md.index("Content discovery")
     assert "| `/admin` | 301 |" in md
     assert "a\\|b" in md  # pipes escaped inside tables
-    assert "## Suggested next steps" in md and "## Commands run" in md
+    assert "## Where to start" in md and "## Commands run" in md
+    assert "- Do the thing" in md  # plain hints still show up under other ideas
     assert "1m 15s" in md
 
 

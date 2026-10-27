@@ -45,6 +45,11 @@ class Logger:
         if not self.quiet:
             self._emit("step", msg)
 
+    def line(self, msg: str = "") -> None:
+        """Untagged output (indented continuation lines, summaries)."""
+        if not self.quiet:
+            print(msg, file=sys.stderr, flush=True)
+
     def debug(self, msg: str) -> None:
         if self.verbose and not self.quiet:
             self._emit("dim", msg)

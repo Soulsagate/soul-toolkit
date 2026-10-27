@@ -161,7 +161,8 @@ def test_web_module_detects_vhost_redirect(tmp_path):
         findings = web.WebModule().run(ctx, Service(port, name="http"))
         vhost = [f for f in findings if f.title.startswith("Redirects to virtual host")]
         assert vhost and vhost[0].data["vhost"] == "hotel.thm"
-        assert any("/etc/hosts" in h for h in ctx.result.hints)
+        lead = next(x for x in ctx.result.leads if x.kind == "web-vhost")
+        assert lead.command.startswith("echo '127.0.0.1 hotel.thm' | sudo tee -a /etc/hosts")
     finally:
         srv.shutdown()
 
@@ -219,7 +220,8 @@ def test_ftp_module_fs_root_findings(tmp_path, monkeypatch):
     assert titles["Anonymous FTP login allowed"].detail == "10 entries in the FTP root"
     assert titles["FTP root is the server's filesystem root (/)"].severity == "high"
     assert titles["World-writable directories in FTP root"].severity == "medium"
-    assert not any("wget -m" in h for h in ctx.result.hints)  # never mirror a whole filesystem
+    assert not any("wget -m" in x.command for x in ctx.result.leads)  # never mirror a whole filesystem
+    assert {x.kind for x in ctx.result.leads} >= {"ftp-fsroot", "ftp-writable"}
 
 
 def test_ftp_module_normal_share_suggests_mirror(tmp_path, monkeypatch):
@@ -227,4 +229,4 @@ def test_ftp_module_normal_share_suggests_mirror(tmp_path, monkeypatch):
                         lambda *a, **k: ["-rw-r--r--    1 0        0             418 Jun 07  2020 note.txt"])
     ctx = make_ctx(tmp_path, target="10.10.10.10")
     ftp_mod.FtpModule().run(ctx, Service(21, name="ftp"))
-    assert "wget -m ftp://anonymous:anonymous@10.10.10.10/" in " ".join(ctx.result.hints)
+    assert "wget -m ftp://anonymous:anonymous@10.10.10.10/" in [x.command for x in ctx.result.leads]

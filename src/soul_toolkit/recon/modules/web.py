@@ -182,18 +182,25 @@ class WebModule(Module):
             if entries:
                 findings.append(Finding(self.name, svc.port, "robots.txt lists paths", "low",
                                         f"{base}/robots.txt", {"entries": entries[:50]}))
+                ctx.lead("web-robots", svc.port, "Visit the paths robots.txt asks crawlers to skip",
+                         f"robots.txt has {len(entries)} entr{'y' if len(entries) == 1 else 'ies'}, "
+                         f"starting with `{entries[0]}`.", f"curl -s {base}/robots.txt")
 
         git = fetch(base + "/.git/HEAD", timeout)
         if git and git.status == 200 and git.body.lstrip().startswith("ref:"):
             findings.append(Finding(self.name, svc.port, "Exposed .git repository", "high",
                                     f"{base}/.git/HEAD is readable - the source code can likely be "
                                     "reconstructed (e.g. with git-dumper)."))
-            ctx.hint(f"Dump the exposed repo: git-dumper {base}/.git/ ./{svc.port}-git")
+            ctx.lead("web-git", svc.port, "Dump the exposed .git repository",
+                     "Source code and commit history often hold credentials, hidden routes and config files.",
+                     f"git-dumper {base}/.git/ ./{svc.port}-git")
 
         if ctx.options.brute:
             findings.extend(self._gobuster(ctx, svc, base))
 
-        ctx.hint(f"Browse {base}/ by hand and read the page source - automated scans miss things.")
+        ctx.lead("web-browse", svc.port, f"Browse {base}/ by hand",
+                 "Read the page source, comments and JavaScript - automated scans miss things.",
+                 f"curl -s {base}/ | less")
         return findings
 
     # -- helpers ---------------------------------------------------------------
@@ -208,8 +215,10 @@ class WebModule(Module):
             if loc_host and loc_host.lower() != target_host.lower() and not _is_ip(loc_host):
                 out.append(Finding(self.name, svc.port, f"Redirects to virtual host '{loc_host}'", "medium",
                                    f"GET / -> {resp.status} {loc}", {"vhost": loc_host}))
-                ctx.hint(f"Add the vhost to /etc/hosts: echo '{ctx.target} {loc_host}' | sudo tee -a /etc/hosts")
-                ctx.hint(f"Then re-run against the name: toolkit recon {loc_host} -p {svc.port}")
+                ip = ctx.target if _is_ip(ctx.target) else (ctx.result.address or ctx.target)
+                ctx.lead("web-vhost", svc.port, f"Add {loc_host} to /etc/hosts and scan it by name",
+                         f"GET / redirects to {loc}; the real site is only served under that name.",
+                         f"echo '{ip} {loc_host}' | sudo tee -a /etc/hosts && toolkit recon {loc_host} -p {svc.port}")
                 return out
             followed = fetch(loc, ctx.options.http_timeout)
             if followed is not None:
@@ -229,8 +238,21 @@ class WebModule(Module):
         gen = details.get("generator", "").lower()
         if "wordpress" in gen or "/wp-content/" in resp.body:
             out.append(Finding(self.name, svc.port, "WordPress detected", "low", details.get("generator", "")))
-            ctx.hint(f"WordPress: wpscan --url {base}/ -e vp,vt,u")
+            ctx.lead("web-wordpress", svc.port, "Enumerate WordPress plugins, themes and users",
+                     "WordPress sites are usually compromised through outdated plugins or weak user passwords.",
+                     f"wpscan --url {base}/ -e vp,vt,u")
         return out
+
+    def _paths_lead(self, ctx: Context, svc: Service, base: str, juicy: list[dict]) -> None:
+        # .git has its own (higher-ranked) lead; don't spend this one on it.
+        juicy = [h for h in juicy if not h["path"].startswith("/.git")]
+        if not juicy:
+            return
+        names = ", ".join(h["path"] for h in juicy[:4]) + (", ..." if len(juicy) > 4 else "")
+        ctx.lead("web-paths", svc.port, f"Check the interesting paths: {names}",
+                 f"Content discovery found {len(juicy)} path(s) with names that usually matter "
+                 "(admin panels, backups, config, uploads).",
+                 f"curl -si {base}{juicy[0]['path']}")
 
     def _gobuster(self, ctx: Context, svc: Service, base: str) -> list[Finding]:
         if not runner.which("gobuster"):
@@ -285,6 +307,7 @@ class WebModule(Module):
             if juicy:
                 findings.append(Finding(self.name, svc.port, "Interesting paths worth checking", "medium",
                                         ", ".join(h["path"] for h in juicy[:15]), {"paths": juicy}))
+                self._paths_lead(ctx, svc, base, juicy)
         else:
             findings.append(Finding(self.name, svc.port, "Content discovery: nothing found", "info",
                                     f"wordlist: {label}. Try a bigger list with --wordlist."))
