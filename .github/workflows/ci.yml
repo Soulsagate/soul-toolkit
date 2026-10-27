@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install ruff
+      - run: ruff check .
+
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the tools recon wraps (tests that need a missing one are skipped)
+        run: |
+          sudo apt-get update -qq
+          for pkg in nmap gobuster ffuf snmp snmpd onesixtyone redis-server nfs-common; do
+            sudo apt-get install -y -qq "$pkg" || echo "::warning::$pkg not available, its tests will be skipped"
+          done
+      - run: pip install -e '.[dev]'
+      - run: pytest -q

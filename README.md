@@ -1,5 +1,10 @@
 # soul-toolkit
 
+[![CI](https://github.com/Soulsagate/soul-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Soulsagate/soul-toolkit/actions/workflows/ci.yml)
+![Python 3.9-3.13](https://img.shields.io/badge/python-3.9%E2%80%933.13-blue)
+![No dependencies](https://img.shields.io/badge/dependencies-none%20(stdlib%20only)-brightgreen)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A modular pentest toolkit for **authorized** labs, CTFs and TryHackMe / Hack The Box boxes.
 One command, sub-commands per job. The first (and flagship) command is **`recon`**.
 
