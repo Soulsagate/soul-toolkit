@@ -81,7 +81,7 @@ def test_report_where_to_start_empty():
 
 def test_ftp_webroot_lead(tmp_path, monkeypatch):
     listing = ["-rw-r--r--    1 0        0             418 Jun 07  2020 index.php"]
-    monkeypatch.setattr(ftp_mod, "anon_listing", lambda *a, **k: listing)
+    monkeypatch.setattr(ftp_mod, "anon_login", lambda *a, **k: ftp_mod.AnonResult(True, listing))
     ctx = make_ctx(tmp_path, [Service(21, name="ftp"), Service(80, name="http")])
     ftp_mod.FtpModule().run(ctx, Service(21, name="ftp"))
     lead = next(x for x in ctx.result.leads if x.kind == "ftp-webroot")
@@ -111,7 +111,8 @@ def test_engine_ranks_leads_and_prints_where_to_start(tmp_path, monkeypatch, cap
     monkeypatch.setattr(runner, "require", lambda *a, **k: "/usr/bin/nmap")
     monkeypatch.setattr(runner, "run", lambda cmd, timeout=None: runner.CommandResult(cmd, 0, FIXTURE_XML, "", 0.1))
     monkeypatch.setattr(engine, "is_root", lambda: False)
-    monkeypatch.setattr(ftp_mod, "anon_listing", lambda *a, **k: ["-rw-r--r-- 1 0 0 418 Jun 07  2020 note.txt"])
+    note = ["-rw-r--r-- 1 0 0 418 Jun 07  2020 note.txt"]
+    monkeypatch.setattr(ftp_mod, "anon_login", lambda *a, **k: ftp_mod.AnonResult(True, note))
     cfg = engine.ReconConfig(target="10.10.10.10", output=tmp_path, ports=[21, 22],
                              modules=select_modules(["ftp", "ssh"]))
     result = engine.run_recon(cfg, Logger(colour=False))

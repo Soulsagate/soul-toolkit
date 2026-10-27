@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ftplib
 import socket
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from soul_toolkit.core.models import Finding, Service
 from soul_toolkit.recon.modules import Context, Module
@@ -53,20 +53,32 @@ def looks_like_fs_root(entries: list[Entry]) -> bool:
     return len(names & FS_ROOT_MARKERS) >= 5
 
 
-def anon_listing(host: str, port: int, timeout: float) -> list[str] | None:
-    """Return the root listing if anonymous login works, otherwise None."""
+@dataclass
+class AnonResult:
+    logged_in: bool
+    listing: list[str] = field(default_factory=list)
+    error: str = ""  # login worked but listing the root didn't (often passive mode blocked)
+
+
+def anon_login(host: str, port: int, timeout: float) -> AnonResult:
+    """Try an anonymous login, then list the root. Login and listing are reported separately:
+    a listing that fails (PASV blocked, server crash) still means anonymous access works."""
     ftp = ftplib.FTP()
     try:
-        ftp.connect(host, port, timeout=timeout)
-        ftp.login("anonymous", "anonymous@example.com")
+        try:
+            ftp.connect(host, port, timeout=timeout)
+            ftp.login("anonymous", "anonymous@example.com")
+        except (ftplib.Error, OSError, socket.timeout, EOFError):
+            return AnonResult(False)
         lines: list[str] = []
         try:
-            ftp.retrlines("LIST -a", lines.append)
-        except ftplib.error_perm:
-            ftp.retrlines("LIST", lines.append)
-        return lines[:MAX_LIST]
-    except (ftplib.Error, OSError, socket.timeout, EOFError):
-        return None
+            try:
+                ftp.retrlines("LIST -a", lines.append)
+            except ftplib.error_perm:
+                ftp.retrlines("LIST", lines.append)
+        except (ftplib.Error, OSError, socket.timeout, EOFError) as exc:
+            return AnonResult(True, [], str(exc).strip() or type(exc).__name__)
+        return AnonResult(True, lines[:MAX_LIST])
     finally:
         try:
             ftp.quit()
@@ -87,9 +99,13 @@ class FtpModule(Module):
         nmap_says_anon = "Anonymous FTP login allowed" in script
 
         ctx.log.info(f"{svc.label} ftp: checking anonymous login")
-        listing = anon_listing(ctx.target, svc.port, ctx.options.http_timeout)
-        if listing is None and nmap_says_anon:
-            listing = script.splitlines()[1:]
+        anon = anon_login(ctx.target, svc.port, ctx.options.http_timeout)
+        if not anon.logged_in and nmap_says_anon:
+            # nmap got in during the service scan; use its listing (or its listing error)
+            lines = script.splitlines()[1:]
+            failed = [ln.strip() for ln in lines if ln.strip().startswith("Can't get directory listing")]
+            anon = AnonResult(True, [] if failed else lines, failed[0] if failed else "")
+        listing = anon.listing if anon.logged_in else None
 
         url_host = f"{ctx.host_for_url()}:{svc.port}" if svc.port != 21 else ctx.host_for_url()
 
@@ -97,10 +113,12 @@ class FtpModule(Module):
             entries = parse_listing(listing)
             shown = [e.raw for e in entries] or [ln.strip() for ln in listing if ln.strip()]
             n = len(entries)
-            findings.append(Finding(self.name, svc.port, "Anonymous FTP login allowed", "high",
-                                    f"{n} entr{'y' if n == 1 else 'ies'} in the FTP root",
-                                    {"listing": shown}))
-            ctx.log.ok(f"{svc.label} ftp: anonymous login works")
+            detail = (f"Login works, but listing the root failed: {anon.error}" if anon.error
+                      else f"{n} entr{'y' if n == 1 else 'ies'} in the FTP root")
+            findings.append(Finding(self.name, svc.port, "Anonymous FTP login allowed", "high", detail,
+                                    {"listing": shown} if shown else {}))
+            ctx.log.ok(f"{svc.label} ftp: anonymous login works"
+                       + (f" (listing failed: {anon.error})" if anon.error else ""))
 
             if looks_like_fs_root(entries):
                 findings.append(Finding(self.name, svc.port, "FTP root is the server's filesystem root (/)", "high",
@@ -109,6 +127,11 @@ class FtpModule(Module):
                 ctx.lead("ftp-fsroot", svc.port, "Browse the server's whole filesystem over anonymous FTP",
                          "The FTP root is / - look in /home/*/ (SSH keys, notes), /etc and /var/www for config "
                          "and backups. Log in as `anonymous`; don't mirror it, /proc and /dev will hang wget.",
+                         f"ftp {ctx.target} {svc.port}")
+            elif anon.error:
+                ctx.lead("ftp-anon", svc.port, "Log in to anonymous FTP and list it by hand",
+                         f"Anonymous login works, but the automatic listing failed ({anon.error}). That's often "
+                         "passive mode being blocked - in the ftp client, try `passive` to toggle it.",
                          f"ftp {ctx.target} {svc.port}")
             elif entries:
                 names = ", ".join(e.name for e in entries[:5]) + (", ..." if n > 5 else "")

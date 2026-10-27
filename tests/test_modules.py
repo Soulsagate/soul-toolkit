@@ -90,7 +90,7 @@ def test_module_matching():
 
 
 def test_ftp_uses_nmap_anon_result(tmp_path, monkeypatch):
-    monkeypatch.setattr(ftp_mod, "anon_listing", lambda *a, **k: None)
+    monkeypatch.setattr(ftp_mod, "anon_login", lambda *a, **k: ftp_mod.AnonResult(False))
     svc = Service(21, name="ftp", product="vsftpd", version="3.0.3",
                   scripts={"ftp-anon": "Anonymous FTP login allowed (FTP code 230)\n-rw-r--r-- 1 0 0 418 note.txt"})
     findings = ftp_mod.FtpModule().run(make_ctx(tmp_path), svc)
@@ -99,7 +99,7 @@ def test_ftp_uses_nmap_anon_result(tmp_path, monkeypatch):
 
 
 def test_ftp_flags_backdoored_vsftpd(tmp_path, monkeypatch):
-    monkeypatch.setattr(ftp_mod, "anon_listing", lambda *a, **k: None)
+    monkeypatch.setattr(ftp_mod, "anon_login", lambda *a, **k: ftp_mod.AnonResult(False))
     findings = ftp_mod.FtpModule().run(make_ctx(tmp_path), Service(21, name="ftp", product="vsftpd", version="2.3.4"))
     assert any("CVE-2011-2523" in f.detail for f in findings)
 
@@ -217,7 +217,7 @@ def test_fs_root_and_writable_detection():
 
 
 def test_ftp_module_fs_root_findings(tmp_path, monkeypatch):
-    monkeypatch.setattr(ftp_mod, "anon_listing", lambda *a, **k: FS_ROOT_LISTING)
+    monkeypatch.setattr(ftp_mod, "anon_login", lambda *a, **k: ftp_mod.AnonResult(True, FS_ROOT_LISTING))
     ctx = make_ctx(tmp_path, target="10.10.10.10")
     findings = ftp_mod.FtpModule().run(ctx, Service(21, name="ftp", product="vsftpd", version="3.0.3"))
     titles = {f.title: f for f in findings}
@@ -229,8 +229,32 @@ def test_ftp_module_fs_root_findings(tmp_path, monkeypatch):
 
 
 def test_ftp_module_normal_share_suggests_mirror(tmp_path, monkeypatch):
-    monkeypatch.setattr(ftp_mod, "anon_listing",
-                        lambda *a, **k: ["-rw-r--r--    1 0        0             418 Jun 07  2020 note.txt"])
+    note = ["-rw-r--r--    1 0        0             418 Jun 07  2020 note.txt"]
+    monkeypatch.setattr(ftp_mod, "anon_login", lambda *a, **k: ftp_mod.AnonResult(True, note))
     ctx = make_ctx(tmp_path, target="10.10.10.10")
     ftp_mod.FtpModule().run(ctx, Service(21, name="ftp"))
     assert "wget -m ftp://anonymous:anonymous@10.10.10.10/" in [x.command for x in ctx.result.leads]
+
+
+def test_ftp_listing_failure_still_counts_as_anonymous_access(tmp_path, monkeypatch):
+    # Seen for real: login works, then PASV dies ("socket EOF") - common behind NAT on CTF boxes.
+    monkeypatch.setattr(ftp_mod, "anon_login",
+                        lambda *a, **k: ftp_mod.AnonResult(True, [], "[Errno 104] Connection reset by peer"))
+    ctx = make_ctx(tmp_path, target="10.10.10.10")
+    [f] = ftp_mod.FtpModule().run(ctx, Service(21, name="ftp"))
+    assert f.severity == "high" and "listing the root failed" in f.detail
+    [lead] = ctx.result.leads
+    assert lead.kind == "ftp-anon" and lead.command == "ftp 10.10.10.10 21" and "passive" in lead.why
+
+
+def test_ftp_nmap_listing_error_is_not_parsed_as_files(tmp_path, monkeypatch):
+    monkeypatch.setattr(ftp_mod, "anon_login", lambda *a, **k: ftp_mod.AnonResult(False))
+    script = "Anonymous FTP login allowed (FTP code 230)\nCan't get directory listing: PASV failed: socket EOF"
+    ctx = make_ctx(tmp_path, target="10.10.10.10")
+    [f] = ftp_mod.FtpModule().run(ctx, Service(21, name="ftp", scripts={"ftp-anon": script}))
+    assert f.detail == "Login works, but listing the root failed: Can't get directory listing: PASV failed: socket EOF"
+    assert ctx.result.leads[0].kind == "ftp-anon"
+
+
+def test_anon_login_against_a_server_that_refuses(tmp_path):
+    assert ftp_mod.anon_login("127.0.0.1", 9, 2) == ftp_mod.AnonResult(False)
