@@ -73,4 +73,5 @@ non-obvious decision (a default you picked, something you deliberately didn't do
 2. Once CI is green on main, push an annotated tag:
    `git tag -a vX.Y.Z -m "soul-toolkit vX.Y.Z" && git push origin vX.Y.Z`.
 3. The Release workflow publishes the GitHub release, with that CHANGELOG section as its notes
-   (`scripts/release_notes.py`). It refuses to publish if the tag and the code disagree.
+   (`scripts/release_notes.py`), then uploads the same version to PyPI with trusted publishing.
+   It refuses to publish if the tag and the code disagree.
