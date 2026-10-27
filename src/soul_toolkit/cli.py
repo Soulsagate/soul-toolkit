@@ -27,6 +27,7 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
             "examples:\n"
             "  sudo toolkit recon 10.10.12.34\n"
             "  toolkit recon 10.10.12.34 --quick --no-brute\n"
+            "  toolkit recon cheese.thm --writeup    # + writeup.md for your notes vault\n"
             "  toolkit recon box.thm -p 80          # also fuzzes *.box.thm vhosts\n"
             "  toolkit recon target.thm -p 80,8080 -w /usr/share/seclists/Discovery/Web-Content/common.txt -x php,txt\n"
         ),
@@ -61,6 +62,10 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
 
     out = p.add_argument_group("output")
     out.add_argument("-o", "--output", default="results", help="output directory (default: ./results)")
+    out.add_argument("--writeup", action="store_true",
+                     help="also write writeup.md: an Obsidian-friendly skeleton with the Recon section filled in")
+    out.add_argument("--room", metavar="NAME", help="room/box name for the writeup (implies --writeup; "
+                     "default: the target, minus .thm/.htb)")
     out.add_argument("-v", "--verbose", action="store_true", help="show the commands being run")
     out.add_argument("-q", "--quiet", action="store_true", help="only print warnings and errors")
 
@@ -104,6 +109,8 @@ def cmd_recon(args: argparse.Namespace) -> int:
         skip_ping=not args.ping,
         scripts=not args.no_scripts,
         modules=modules,
+        writeup=args.writeup or bool(args.room),
+        room=args.room,
         options=Options(
             brute=not args.no_brute,
             wordlist=args.wordlist,

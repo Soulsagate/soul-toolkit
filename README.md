@@ -124,6 +124,8 @@ modules:
 
 output:
   -o, --output DIR        output directory (default ./results)
+  --writeup               also write writeup.md (Obsidian-friendly skeleton, Recon pre-filled)
+  --room NAME             room/box name for the writeup (implies --writeup)
   -v, --verbose           print every command as it runs
   -q, --quiet             warnings and errors only
 ```
@@ -140,6 +142,9 @@ toolkit recon 10.10.42.17 --quick --no-brute
 # Box redirected you to a vhost? Add it to /etc/hosts, then target the name
 toolkit recon cheese.thm -p 80 -x php,txt,html
 
+# Start your writeup while you scan: writeup.md lands next to the report
+toolkit recon cheese.thm --room "Cheese CTF"
+
 # Bigger wordlist for the web module only
 toolkit recon 10.10.42.17 -p 80 -m web \
   -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
@@ -151,12 +156,17 @@ toolkit recon 10.10.42.17 -p 80 -m web \
 results/<target>/
 ├── report.md            # human-readable report (the main thing)
 ├── findings.json        # everything, machine-readable
+├── writeup.md           # with --writeup: frontmatter, Recon filled in, empty Foothold/PrivEsc/Flags
 ├── nmap-ports.xml       # raw stage 1 output
 ├── nmap-services.xml    # raw stage 2 output
 ├── gobuster-<port>.txt  # raw gobuster output per web port
 ├── gobuster-<port>-<dir>.txt  # one per directory recursed into
 └── vhosts-<port>.json   # raw ffuf vhost results (.txt when gobuster was used)
 ```
+
+`writeup.md` has YAML frontmatter (room, platform, date, tags from the open services) and uses
+Obsidian callouts, so it drops straight into a notes vault or a writeups repo; it renders fine on
+GitHub too. An existing `writeup.md` is never overwritten - a timestamped copy is written instead.
 
 Reports replace your home directory with `~`, so they're safe to paste into writeups.
 `results/` is git-ignored so scan data never ends up in a commit.

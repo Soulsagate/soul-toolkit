@@ -15,6 +15,7 @@ from soul_toolkit.core.target import safe_dirname
 from soul_toolkit.recon import leads, nmap
 from soul_toolkit.recon.modules import Context, Module, Options
 from soul_toolkit.recon.report import write_reports
+from soul_toolkit.recon.writeup import write_writeup
 
 
 @dataclass
@@ -28,6 +29,8 @@ class ReconConfig:
     scripts: bool = True
     modules: list[Module] | None = None
     options: Options = None  # type: ignore[assignment]
+    writeup: bool = False
+    room: str | None = None
 
     def __post_init__(self) -> None:
         if self.options is None:
@@ -170,5 +173,7 @@ def _finish(cfg: ReconConfig, result: HostResult, outdir: Path, t0: float, log: 
            f"{len(result.findings)} finding(s) ({high} medium/high)")
     print_where_to_start(result, log)
     log.ok(f"Report: {md}")
+    if cfg.writeup:
+        log.ok(f"Writeup: {write_writeup(result, outdir, cfg.room)}")
     log.debug(f"JSON:   {js}")
     return result
