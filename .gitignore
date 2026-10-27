@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+
+# Scan output — never commit real target data
+results/
+*.xml
+!tests/fixtures/*.xml
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
