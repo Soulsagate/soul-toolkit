@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sT -T4 --open -oX - -Pn -sV -sC -p 21,22,80,139,445,8443 10.10.10.10" start="1761530000" version="7.94SVN" xmloutputversion="1.05">
+<host starttime="1761530000" endtime="1761530060">
+<status state="up" reason="user-set" reason_ttl="0"/>
+<address addr="10.10.10.10" addrtype="ipv4"/>
+<hostnames><hostname name="box.thm" type="user"/></hostnames>
+<ports>
+<port protocol="tcp" portid="21"><state state="open" reason="syn-ack" reason_ttl="0"/><service name="ftp" product="vsftpd" version="3.0.3" ostype="Unix" method="probed" conf="10"/><script id="ftp-anon" output="Anonymous FTP login allowed (FTP code 230)&#xa;-rw-r--r--    1 0        0             418 Jun 07  2020 note.txt"/></port>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="0"/><service name="ssh" product="OpenSSH" version="7.6p1 Ubuntu 4ubuntu0.3" extrainfo="Ubuntu Linux; protocol 2.0" ostype="Linux" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="0"/><service name="http" product="Apache httpd" version="2.4.29" extrainfo="(Ubuntu)" method="probed" conf="10"/><script id="http-title" output="Site doesn&apos;t have a title (text/html)."/><script id="http-server-header" output="Apache/2.4.29 (Ubuntu)"/></port>
+<port protocol="tcp" portid="139"><state state="open" reason="syn-ack" reason_ttl="0"/><service name="netbios-ssn" product="Samba smbd" version="3.X - 4.X" extrainfo="workgroup: WORKGROUP" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="445"><state state="open" reason="syn-ack" reason_ttl="0"/><service name="netbios-ssn" product="Samba smbd" version="4.7.6-Ubuntu" extrainfo="workgroup: WORKGROUP" method="probed" conf="10"/><script id="smb2-security-mode" output="&#xa;  3:1:1: &#xa;    Message signing enabled but not required"/></port>
+<port protocol="tcp" portid="8443"><state state="open" reason="syn-ack" reason_ttl="0"/><service name="http" product="nginx" tunnel="ssl" method="probed" conf="10"/></port>
+<port protocol="tcp" portid="3306"><state state="filtered" reason="no-response" reason_ttl="0"/><service name="mysql" method="table" conf="3"/></port>
+</ports>
+<os><osmatch name="Linux 4.15" accuracy="95" line="1"/></os>
+</host>
+<runstats><finished time="1761530060" elapsed="60.00" exit="success"/><hosts up="1" down="0" total="1"/></runstats>
+</nmaprun>
