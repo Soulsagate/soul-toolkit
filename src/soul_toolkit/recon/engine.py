@@ -42,11 +42,45 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
+def sudo_owner() -> tuple[int, int] | None:
+    """(uid, gid) of the user who invoked sudo, or None if we're not running under sudo."""
+    uid, gid = os.environ.get("SUDO_UID", ""), os.environ.get("SUDO_GID", "")
+    if is_root() and uid.isdigit() and gid.isdigit() and int(uid) != 0:
+        return int(uid), int(gid)
+    return None
+
+
+def hand_back(owner: tuple[int, int] | None, tree: Path, base: Path | None = None) -> None:
+    """chown everything under *tree* (and *base* itself, non-recursively) to the sudo user,
+    so a `sudo toolkit recon` run doesn't leave root-owned files in the user's folder."""
+    if owner is None:
+        return
+    uid, gid = owner
+    targets = [base] if base is not None else []
+    if tree.exists():
+        targets.append(tree)
+        for root, dirs, files in os.walk(tree):
+            targets += [Path(root, n) for n in dirs + files]
+    for p in targets:
+        try:
+            os.lchown(p, uid, gid)
+        except OSError:
+            pass
+
+
 def run_recon(cfg: ReconConfig, log: Logger) -> HostResult:
     runner.require("nmap", "Install it with your package manager (e.g. `sudo pacman -S nmap`).")
 
     outdir = cfg.output / safe_dirname(cfg.target)
+    base_created = not cfg.output.exists()
     outdir.mkdir(parents=True, exist_ok=True)
+    try:
+        return _run_stages(cfg, log, outdir)
+    finally:
+        hand_back(sudo_owner(), outdir, cfg.output if base_created else None)
+
+
+def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path) -> HostResult:
     result = HostResult(target=cfg.target, started=_now())
     t0 = time.monotonic()
 

@@ -173,3 +173,58 @@ def test_wordlist_resolution(tmp_path):
     with pytest.raises(FileNotFoundError):
         web.resolve_wordlist(str(tmp_path / "missing.txt"))
     assert Path(web.bundled_wordlist()).is_file()
+
+
+# ----------------------------------------------------------------- FTP listing analysis
+
+FS_ROOT_LISTING = [
+    "drwxr-xr-x   23 0        0            4096 Aug 11  2019 .",
+    "drwxr-xr-x   23 0        0            4096 Aug 11  2019 ..",
+    "drwxr-xr-x    2 0        0            4096 Aug 11  2019 bin",
+    "drwxr-xr-x    3 0        0            4096 Aug 11  2019 boot",
+    "drwxr-xr-x   85 0        0            4096 Aug 13  2019 etc",
+    "drwxr-xr-x    3 0        0            4096 Aug 11  2019 home",
+    "lrwxrwxrwx    1 0        0              30 Aug 11  2019 vmlinuz -> boot/vmlinuz-4.4.0-157-generic",
+    "drwxrwxrwx    2 1000     1000         4096 Aug 11  2019 shared [NSE: writeable]",
+    "drwx------    3 0        0            4096 Aug 11  2019 root",
+    "dr-xr-xr-x   90 0        0               0 Oct 26 17:32 proc",
+    "drwxr-xr-x   10 0        0            4096 Aug 11  2019 usr",
+    "drwxr-xr-x   11 0        0            4096 Aug 11  2019 var",
+    "Only 20 shown. Use --script-args ftp-anon.maxlist=-1 to see all.",
+]
+
+
+def test_parse_listing_drops_dots_and_noise():
+    entries = ftp_mod.parse_listing(FS_ROOT_LISTING)
+    names = [e.name for e in entries]
+    assert "." not in names and ".." not in names
+    assert "vmlinuz" in names and "shared" in names
+    assert len(entries) == 10
+
+
+def test_fs_root_and_writable_detection():
+    entries = ftp_mod.parse_listing(FS_ROOT_LISTING)
+    assert ftp_mod.looks_like_fs_root(entries)
+    assert [e.name for e in entries if e.is_dir and e.world_writable] == ["shared"]
+    normal = ftp_mod.parse_listing(["-rw-r--r--    1 0        0             418 Jun 07  2020 note.txt"])
+    assert not ftp_mod.looks_like_fs_root(normal)
+    assert not normal[0].world_writable
+
+
+def test_ftp_module_fs_root_findings(tmp_path, monkeypatch):
+    monkeypatch.setattr(ftp_mod, "anon_listing", lambda *a, **k: FS_ROOT_LISTING)
+    ctx = make_ctx(tmp_path, target="10.10.10.10")
+    findings = ftp_mod.FtpModule().run(ctx, Service(21, name="ftp", product="vsftpd", version="3.0.3"))
+    titles = {f.title: f for f in findings}
+    assert titles["Anonymous FTP login allowed"].detail == "10 entries in the FTP root"
+    assert titles["FTP root is the server's filesystem root (/)"].severity == "high"
+    assert titles["World-writable directories in FTP root"].severity == "medium"
+    assert not any("wget -m" in h for h in ctx.result.hints)  # never mirror a whole filesystem
+
+
+def test_ftp_module_normal_share_suggests_mirror(tmp_path, monkeypatch):
+    monkeypatch.setattr(ftp_mod, "anon_listing",
+                        lambda *a, **k: ["-rw-r--r--    1 0        0             418 Jun 07  2020 note.txt"])
+    ctx = make_ctx(tmp_path, target="10.10.10.10")
+    ftp_mod.FtpModule().run(ctx, Service(21, name="ftp"))
+    assert "wget -m ftp://anonymous:anonymous@10.10.10.10/" in " ".join(ctx.result.hints)
