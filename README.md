@@ -14,7 +14,7 @@ straight away: a Markdown report, a self-contained HTML report, and a writeup sk
 notes vault.
 
 > ⚠️ **Authorized use only.** Only point this at machines you own or have explicit
-> permission to test. Read [DISCLAIMER.md](DISCLAIMER.md).
+> permission to test. Read [DISCLAIMER.md](https://github.com/Soulsagate/soul-toolkit/blob/main/DISCLAIMER.md).
 
 ```bash
 pipx install git+https://github.com/Soulsagate/soul-toolkit
@@ -22,14 +22,19 @@ toolkit doctor                           # what's installed, how to get the rest
 sudo "$(which toolkit)" recon 10.10.42.17
 ```
 
-**New to this?** The step-by-step **[Getting started guide](docs/getting-started.md)** walks you
+**New to this?** The step-by-step **[Getting started guide](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/getting-started.md)** walks you
 from a fresh machine to your first report: install commands for your distro, connecting the VPN,
 reading the results, and fixes for the common errors.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Soulsagate/soul-toolkit/main/docs/demo.gif" alt="toolkit recon running against the bundled lab: port sweep, service scan, follow-up modules, then a ranked Where to start list" width="806">
+</p>
+<p align="center"><sub>A real run against the bundled <a href="https://github.com/Soulsagate/soul-toolkit/tree/main/tests/lab">lab</a>, with the long waits sped up.</sub></p>
 
 ## What you get
 
 Everything below is real output from one run against the deliberately vulnerable lab in
-[`tests/lab/`](tests/lab/) (anonymous FTP, a web app with an exposed `.git` and a hidden vhost,
+[`tests/lab/`](https://github.com/Soulsagate/soul-toolkit/tree/main/tests/lab) (anonymous FTP, a web app with an exposed `.git` and a hidden vhost,
 null-session SMB, a world-readable NFS export), run as root with the default profile:
 `toolkit recon 172.29.99.10 --writeup --room "Soul Lab"`.
 
@@ -112,25 +117,25 @@ Each lead in the report also says *why* it matters, for example:
 open or relocate it) gets:
 
 - **`report.md`** - Where to start, open ports, findings by severity, nmap script output, every
-  command that was run. Full sample: **[docs/sample-report.md](docs/sample-report.md)**
+  command that was run. Full sample: **[docs/sample-report.md](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/sample-report.md)**
 - **`report.html`** - the same in one self-contained file you can open offline: a summary card,
   section nav, findings you can filter by severity, a Copy button on every command, light and
   dark themes, and a print stylesheet. No CDNs, fonts or other network requests, and it reads
-  fine with JavaScript off. Sample: [docs/sample-report.html](docs/sample-report.html)
+  fine with JavaScript off. Sample: [docs/sample-report.html](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/sample-report.html)
   (download and open it)
 - **`findings.json`** - everything, for your own scripts
 
 | Light | Dark |
 |---|---|
-| ![HTML report, light theme: summary card and Where to start](docs/report-light.png) | ![HTML report, dark theme: findings with severity filter](docs/report-dark.png) |
+| ![HTML report, light theme: summary card and Where to start](https://raw.githubusercontent.com/Soulsagate/soul-toolkit/main/docs/report-light.png) | ![HTML report, dark theme: findings with severity filter](https://raw.githubusercontent.com/Soulsagate/soul-toolkit/main/docs/report-dark.png) |
 
-Both screenshots are of the sample report above, from a real run against the [lab](tests/lab).
+Both screenshots are of the sample report above, from a real run against the [lab](https://github.com/Soulsagate/soul-toolkit/tree/main/tests/lab).
 
 ### 3. A writeup that's already started
 
 With `--writeup` (or `--room NAME`) you also get `writeup.md`: Obsidian-friendly frontmatter, the
 Recon section filled in, and empty Foothold / Privilege Escalation / Flags sections waiting for
-you. Sample: **[docs/sample-writeup.md](docs/sample-writeup.md)**. From the same run:
+you. Sample: **[docs/sample-writeup.md](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/sample-writeup.md)**. From the same run:
 
 ```markdown
 ---
@@ -193,16 +198,16 @@ results of an earlier run.
 | `ldap` | LDAP (389 / 636 / 3268 / 3269) | AD domain and DC name from nmap, `/etc/hosts` line, `ldapsearch` anonymous-read command |
 | `exploits` | any service with a product + version | `searchsploit` lookup, deduped across ports, top matches with EDB-IDs (remote exploits first) |
 
-Each module is one small file in [`src/soul_toolkit/recon/modules/`](src/soul_toolkit/recon/modules/). Adding a service = one class with `matches()` and `run()`.
+Each module is one small file in [`src/soul_toolkit/recon/modules/`](https://github.com/Soulsagate/soul-toolkit/tree/main/src/soul_toolkit/recon/modules). Adding a service = one class with `matches()` and `run()`.
 
 Missing an optional tool only skips that check, with an install hint - `toolkit doctor` shows what
-you have. Want another service? [docs/writing-a-module.md](docs/writing-a-module.md) walks through
+you have. Want another service? [docs/writing-a-module.md](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/writing-a-module.md) walks through
 adding one.
 
 ## Install
 
-> First time? Follow the [Getting started guide](docs/getting-started.md) instead - it covers the
-> same steps one at a time, per distro, plus [troubleshooting](docs/getting-started.md#7-troubleshooting).
+> First time? Follow the [Getting started guide](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/getting-started.md) instead - it covers the
+> same steps one at a time, per distro, plus [troubleshooting](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/getting-started.md#7-troubleshooting).
 
 Requires **Python 3.9+** and **nmap**. Runs on any modern Linux: Kali, the TryHackMe AttackBox,
 Arch/EndeavourOS, Debian, Ubuntu, Linux Mint / LMDE. **WSL2** works too, as long as your VPN
@@ -446,9 +451,9 @@ Tests use recorded tool output and throwaway servers on `127.0.0.1`, so they run
 touching real targets; tests that need a real tool skip when it isn't installed. CI runs the same
 on Python 3.9-3.13.
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) - ground rules and workflow
-- [docs/writing-a-module.md](docs/writing-a-module.md) - add a service module, step by step
-- [CHANGELOG.md](CHANGELOG.md) - what changed in each version
+- [CONTRIBUTING.md](https://github.com/Soulsagate/soul-toolkit/blob/main/CONTRIBUTING.md) - ground rules and workflow
+- [docs/writing-a-module.md](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/writing-a-module.md) - add a service module, step by step
+- [CHANGELOG.md](https://github.com/Soulsagate/soul-toolkit/blob/main/CHANGELOG.md) - what changed in each version
 
 ## Roadmap
 
@@ -462,4 +467,4 @@ on Python 3.9-3.13.
 
 ## License
 
-[MIT](LICENSE). Use it, learn from it, break it, improve it. Just only on things you're allowed to.
+[MIT](https://github.com/Soulsagate/soul-toolkit/blob/main/LICENSE). Use it, learn from it, break it, improve it. Just only on things you're allowed to.
