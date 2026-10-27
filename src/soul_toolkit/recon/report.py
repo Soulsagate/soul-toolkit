@@ -156,6 +156,11 @@ def _finding_body(data: dict) -> str:
     for key in ("listing", "entries"):
         if key in data:
             return _fence("\n".join(data[key]))
+    if "vhosts" in data:
+        rows = ["| Virtual host | Status | Size |", "|---|---|---|"]
+        rows += [f"| `{v['host']}` | {v['status']} | {v['size']} |" for v in data["vhosts"]]
+        rows += ["", "Add them to `/etc/hosts`:", "", _fence(data["hosts_line"])]
+        return "\n".join(rows)
     if "exploits" in data:
         rows = ["| EDB-ID | Title | Type | Verified |", "|---|---|---|---|"]
         rows += [f"| {e['edb_id']} | {_cell(e['title'])} | {e['type'] or '-'} | {'yes' if e['verified'] else 'no'} |"

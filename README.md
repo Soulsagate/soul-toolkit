@@ -27,7 +27,7 @@ It runs recon in stages, and each stage decides what the next one does:
 
 | Module | Triggers on | Does |
 |---|---|---|
-| `web` | HTTP/HTTPS | fingerprint (server, title, generator), vhost-redirect detection with an `/etc/hosts` hint, `robots.txt`, exposed `.git`, `gobuster` content discovery with automatic wildcard handling, flags interesting paths |
+| `web` | HTTP/HTTPS | fingerprint (server, title, generator), vhost-redirect detection, vhost fuzzing (`ffuf`, else `gobuster vhost`) when the target is a hostname or redirects to one - with the wildcard size filtered out and the `/etc/hosts` line to add, `robots.txt`, exposed `.git`, `gobuster` content discovery with automatic wildcard handling, flags interesting paths |
 | `ftp` | FTP | anonymous login check + root listing (nothing is downloaded), known-backdoor version check |
 | `ssh` | SSH | version notes (e.g. CVE-2018-15473 user enumeration on OpenSSH ≤ 7.7) |
 | `smb` | 139 / 445 | null-session share listing via `smbclient`, message-signing check |
@@ -70,6 +70,7 @@ Requires **Python 3.9+** and **Linux**. The toolkit wraps existing tools rather 
 |---|---|---|---|
 | `nmap` | required | `sudo pacman -S nmap` | `sudo apt install nmap` |
 | `gobuster` | `web` content discovery | `sudo pacman -S gobuster` | `sudo apt install gobuster` |
+| `ffuf` | `web` vhost fuzzing (falls back to gobuster) | `sudo pacman -S ffuf` | `sudo apt install ffuf` |
 | `smbclient` | `smb` share listing | `sudo pacman -S smbclient` | `sudo apt install smbclient` |
 | `searchsploit` | `exploits` lookups | `yay -S exploitdb` | `sudo apt install exploitdb` |
 | SecLists | better wordlists (optional) | `yay -S seclists` | `sudo apt install seclists` |
@@ -112,7 +113,9 @@ modules:
   -m, --modules LIST      only run these modules (e.g. web,ftp)
   --no-modules            nmap only
   --list-modules          show available modules
-  --no-brute              skip gobuster
+  --no-brute              skip content discovery and vhost fuzzing
+  --no-vhost              skip vhost fuzzing only
+  --vhost-wordlist FILE   vhost wordlist (default: SecLists subdomains-top1million-5000.txt, else bundled)
   -w, --wordlist FILE     gobuster wordlist (default: SecLists common.txt, else a small bundled list)
   -x, --extensions EXT    gobuster extensions, e.g. php,txt,html
   -t, --threads N         gobuster threads (default 30)
@@ -149,7 +152,8 @@ results/<target>/
 ├── findings.json        # everything, machine-readable
 ├── nmap-ports.xml       # raw stage 1 output
 ├── nmap-services.xml    # raw stage 2 output
-└── gobuster-<port>.txt  # raw gobuster output per web port
+├── gobuster-<port>.txt  # raw gobuster output per web port
+└── vhosts-<port>.json   # raw ffuf vhost results (.txt when gobuster was used)
 ```
 
 Reports replace your home directory with `~`, so they're safe to paste into writeups.

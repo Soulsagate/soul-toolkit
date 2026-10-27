@@ -27,6 +27,7 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
             "examples:\n"
             "  sudo toolkit recon 10.10.12.34\n"
             "  toolkit recon 10.10.12.34 --quick --no-brute\n"
+            "  toolkit recon box.thm -p 80          # also fuzzes *.box.thm vhosts\n"
             "  toolkit recon target.thm -p 80,8080 -w /usr/share/seclists/Discovery/Web-Content/common.txt -x php,txt\n"
         ),
     )
@@ -45,7 +46,10 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
     mods.add_argument("-m", "--modules", help="comma-separated modules to run (default: all)")
     mods.add_argument("--no-modules", action="store_true", help="nmap only, no follow-up modules")
     mods.add_argument("--list-modules", action="store_true", help="list available modules and exit")
-    mods.add_argument("--no-brute", action="store_true", help="skip gobuster content discovery")
+    mods.add_argument("--no-brute", action="store_true", help="skip content discovery and vhost fuzzing")
+    mods.add_argument("--no-vhost", action="store_true", help="skip vhost fuzzing only")
+    mods.add_argument("--vhost-wordlist", metavar="FILE",
+                      help="wordlist for vhost fuzzing (default: SecLists subdomains-top1million-5000.txt if found)")
     mods.add_argument("-w", "--wordlist", help="wordlist for gobuster (default: SecLists common.txt if found)")
     mods.add_argument("-x", "--extensions", default="", help="extensions for gobuster, e.g. php,txt,html")
     mods.add_argument("-t", "--threads", type=int, default=30, help="gobuster threads (default 30)")
@@ -103,6 +107,8 @@ def cmd_recon(args: argparse.Namespace) -> int:
             threads=max(1, args.threads),
             brute_timeout=max(10, args.brute_timeout),
             extensions=args.extensions,
+            vhosts=not args.no_vhost,
+            vhost_wordlist=args.vhost_wordlist,
         ),
     )
 

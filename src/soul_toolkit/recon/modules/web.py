@@ -1,10 +1,11 @@
-"""HTTP/HTTPS follow-ups: fingerprint, vhost redirects, robots.txt, exposed .git, gobuster."""
+"""HTTP/HTTPS follow-ups: fingerprint, vhost redirects + fuzzing, robots.txt, exposed .git, gobuster."""
 
 from __future__ import annotations
 
 import html
 import ipaddress
 import re
+import socket
 import ssl
 import urllib.error
 import urllib.parse
@@ -15,6 +16,7 @@ from pathlib import Path
 
 from soul_toolkit.core import runner
 from soul_toolkit.core.models import Finding, Service
+from soul_toolkit.recon import vhosts
 from soul_toolkit.recon.modules import Context, Module
 
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) soul-toolkit-recon"
@@ -53,6 +55,7 @@ class HttpResponse:
     headers: dict[str, str]
     body: str
     location: str = ""
+    size: int = 0  # body length in bytes, as ffuf/gobuster count it
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -60,23 +63,34 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None  # surface 3xx as HTTPError so we can inspect Location
 
 
-def fetch(url: str, timeout: float) -> HttpResponse | None:
+def _size(headers: dict[str, str], raw: bytes) -> int:
+    length = headers.get("content-length", "")
+    return int(length) if length.isdigit() else len(raw)
+
+
+def fetch(url: str, timeout: float, host: str | None = None) -> HttpResponse | None:
+    """GET *url* without following redirects. *host* overrides the Host header (vhost probing)."""
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE  # lab targets use self-signed certs
     opener = urllib.request.build_opener(_NoRedirect, urllib.request.HTTPSHandler(context=ctx))
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    headers = {"User-Agent": USER_AGENT}
+    if host:
+        headers["Host"] = host
+    req = urllib.request.Request(url, headers=headers)
     try:
         with opener.open(req, timeout=timeout) as r:
-            body = r.read(MAX_BODY).decode("utf-8", errors="replace")
-            return HttpResponse(r.status, {k.lower(): v for k, v in r.headers.items()}, body)
+            raw = r.read(MAX_BODY)
+            hdrs = {k.lower(): v for k, v in r.headers.items()}
+            return HttpResponse(r.status, hdrs, raw.decode("utf-8", errors="replace"), size=_size(hdrs, raw))
     except urllib.error.HTTPError as e:
         try:
-            body = e.read(MAX_BODY).decode("utf-8", errors="replace")
+            raw = e.read(MAX_BODY)
         except Exception:  # pragma: no cover - defensive
-            body = ""
-        headers = {k.lower(): v for k, v in (e.headers or {}).items()}
-        return HttpResponse(e.code, headers, body, headers.get("location", ""))
+            raw = b""
+        hdrs = {k.lower(): v for k, v in (e.headers or {}).items()}
+        return HttpResponse(e.code, hdrs, raw.decode("utf-8", errors="replace"), hdrs.get("location", ""),
+                            _size(hdrs, raw))
     except (urllib.error.URLError, OSError, ValueError):
         return None
 
@@ -170,11 +184,14 @@ class WebModule(Module):
         ctx.log.info(f"{svc.label} web: fingerprinting {base}")
 
         root = fetch(base + "/", timeout)
+        redirect_vhost = None
         if root is None:
             findings.append(Finding(self.name, svc.port, "Web server did not respond to HTTP request", "info",
                                     f"GET {base}/ failed; the port may need a different protocol."))
         else:
-            findings.extend(self._fingerprint(ctx, svc, base, root))
+            fp = self._fingerprint(ctx, svc, base, root)
+            redirect_vhost = next((f.data["vhost"] for f in fp if "vhost" in f.data), None)
+            findings.extend(fp)
 
         robots = fetch(base + "/robots.txt", timeout)
         if robots and robots.status == 200 and "<html" not in robots.body[:500].lower():
@@ -197,6 +214,10 @@ class WebModule(Module):
 
         if ctx.options.brute:
             findings.extend(self._gobuster(ctx, svc, base))
+            if ctx.options.vhosts and root is not None:
+                domain = vhosts.fuzz_domain(ctx.target, redirect_vhost, _is_ip(ctx.target))
+                if domain:
+                    findings.extend(self._vhost_fuzz(ctx, svc, base, domain))
 
         ctx.lead("web-browse", svc.port, f"Browse {base}/ by hand",
                  "Read the page source, comments and JavaScript - automated scans miss things.",
@@ -215,7 +236,7 @@ class WebModule(Module):
             if loc_host and loc_host.lower() != target_host.lower() and not _is_ip(loc_host):
                 out.append(Finding(self.name, svc.port, f"Redirects to virtual host '{loc_host}'", "medium",
                                    f"GET / -> {resp.status} {loc}", {"vhost": loc_host}))
-                ip = ctx.target if _is_ip(ctx.target) else (ctx.result.address or ctx.target)
+                ip = _target_ip(ctx)
                 ctx.lead("web-vhost", svc.port, f"Add {loc_host} to /etc/hosts and scan it by name",
                          f"GET / redirects to {loc}; the real site is only served under that name.",
                          f"echo '{ip} {loc_host}' | sudo tee -a /etc/hosts && toolkit recon {loc_host} -p {svc.port}")
@@ -242,6 +263,67 @@ class WebModule(Module):
                      "WordPress sites are usually compromised through outdated plugins or weak user passwords.",
                      f"wpscan --url {base}/ -e vp,vt,u")
         return out
+
+    def _vhost_fuzz(self, ctx: Context, svc: Service, base: str, domain: str) -> list[Finding]:
+        tool = "ffuf" if runner.which("ffuf") else "gobuster" if runner.which("gobuster") else None
+        if tool is None:
+            ctx.log.warn("neither ffuf nor gobuster installed - skipping vhost fuzzing")
+            ctx.hint("Install ffuf (or gobuster) to enable virtual-host fuzzing.")
+            return []
+        try:
+            wordlist, label = vhosts.resolve_wordlist(ctx.options.vhost_wordlist)
+        except FileNotFoundError as exc:
+            ctx.log.error(str(exc))
+            return []
+
+        # Calibrate: what does a name that can't exist get back? Two probes catch dynamic pages.
+        probes = [fetch(base + "/", ctx.options.http_timeout, host=f"{vhosts.random_label()}.{domain}")
+                  for _ in range(2)]
+        if any(p is None for p in probes):
+            ctx.log.warn(f"{svc.label} web: vhost calibration requests failed - skipping vhost fuzzing")
+            return []
+        size = vhosts.wildcard_size([p.size for p in probes if p is not None])
+        how = f"filtering wildcard size {size}" if size is not None else "wildcard size varies, auto-calibrating"
+        if size is None and tool == "gobuster":
+            how = "wildcard size varies, relying on gobuster's baseline"
+        ctx.log.info(f"{svc.label} web: vhost fuzzing *.{domain} with {tool} ({label}; {how})")
+
+        outfile = ctx.outdir / f"vhosts-{svc.port}.{'json' if tool == 'ffuf' else 'txt'}"
+        timeout, budget = ctx.options.http_timeout, ctx.options.brute_timeout
+        if tool == "ffuf":
+            cmd = vhosts.build_ffuf(base, domain, wordlist, outfile, threads=ctx.options.threads,
+                                    timeout=timeout, maxtime=budget, filter_size=size)
+        else:
+            cmd = vhosts.build_gobuster_vhost(base, domain, wordlist, outfile, threads=ctx.options.threads,
+                                              timeout=timeout, filter_size=size, tls=svc.is_tls)
+        res = ctx.run(cmd, timeout=budget + 30)
+        text = outfile.read_text(encoding="utf-8", errors="replace") if outfile.exists() else ""
+        found = vhosts.parse_ffuf(text) if tool == "ffuf" else vhosts.parse_gobuster_vhost(text or res.stdout)
+        found = [v for v in found if v["host"] != domain]
+        if res.timed_out:
+            ctx.log.warn(f"{svc.label} web: vhost fuzzing hit the time limit - results are partial")
+        elif not res.ok and not found:
+            err = (res.stderr or res.stdout).strip().splitlines()
+            ctx.log.warn(f"{svc.label} web: {tool} vhost fuzzing failed: {err[-1] if err else 'unknown error'}")
+            return []
+        if not found:
+            ctx.log.info(f"{svc.label} web: no extra vhosts under {domain}")
+            return [Finding(self.name, svc.port, f"Vhost fuzzing: nothing found under {domain}", "info",
+                            f"wordlist: {label}. Try a bigger list with --vhost-wordlist.")]
+
+        ip = _target_ip(ctx)
+        line = vhosts.hosts_line(ip, domain, found)
+        names = ", ".join(v["host"] for v in found)
+        ctx.log.ok(f"{svc.label} web: {len(found)} vhost(s) found: {names}")
+        ctx.log.ok(f"{svc.label} web: add to /etc/hosts: {line}")
+        # This hosts line already covers the redirect target; one /etc/hosts edit is enough.
+        ctx.result.leads = [x for x in ctx.result.leads if not (x.kind == "web-vhost" and x.port == svc.port)]
+        ctx.lead("web-vhosts", svc.port, f"Add the new vhost(s) to /etc/hosts and enumerate them: {names}",
+                 "These names serve something different from the default site - dev/admin/staging vhosts are a "
+                 f"classic CTF foothold. Then run `toolkit recon <name> -p {svc.port}` on {domain} and each vhost.",
+                 f"echo '{line}' | sudo tee -a /etc/hosts")
+        return [Finding(self.name, svc.port, f"Virtual hosts found: {names}", "medium",
+                        f"Add to /etc/hosts: `{line}`", {"vhosts": found, "hosts_line": line})]
 
     def _paths_lead(self, ctx: Context, svc: Service, base: str, juicy: list[dict]) -> None:
         # .git has its own (higher-ranked) lead; don't spend this one on it.
@@ -312,6 +394,18 @@ class WebModule(Module):
             findings.append(Finding(self.name, svc.port, "Content discovery: nothing found", "info",
                                     f"wordlist: {label}. Try a bigger list with --wordlist."))
         return findings
+
+
+def _target_ip(ctx: Context) -> str:
+    """The IP to put in /etc/hosts lines: the target, nmap's resolved address, or a DNS lookup."""
+    if _is_ip(ctx.target):
+        return ctx.target
+    if ctx.result.address:
+        return ctx.result.address
+    try:
+        return socket.gethostbyname(ctx.target)
+    except OSError:
+        return "<target-ip>"
 
 
 def _is_ip(host: str) -> bool:

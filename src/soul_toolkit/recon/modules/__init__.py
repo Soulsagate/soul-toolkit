@@ -27,6 +27,8 @@ class Options:
     brute_timeout: int = 600
     http_timeout: int = 8
     extensions: str = ""
+    vhosts: bool = True
+    vhost_wordlist: str | None = None
 
 
 @dataclass
