@@ -74,7 +74,39 @@ Real run against a local test lab (an anonymous FTP server, a web server with an
 
 ## Install
 
-Requires **Python 3.9+** and **Linux**. The toolkit wraps existing tools rather than reinventing them:
+Requires **Python 3.9+** and **nmap**. Built for Linux (Kali, the TryHackMe AttackBox, Arch);
+macOS should work but isn't tested. No Python dependencies beyond the standard library.
+
+### 1. The toolkit
+
+**pipx** (recommended) - installs into its own environment and puts `toolkit` on your PATH:
+
+```bash
+pipx install git+https://github.com/Soulsagate/soul-toolkit
+toolkit doctor                      # what's installed, what's missing
+pipx reinstall soul-toolkit         # update to the latest version later
+```
+
+No pipx yet? `sudo apt install pipx` (Kali/Debian), `sudo pacman -S python-pipx` (Arch) or
+`brew install pipx` (macOS), then `pipx ensurepath`.
+
+**venv** - if you want to hack on the code:
+
+```bash
+git clone https://github.com/Soulsagate/soul-toolkit.git
+cd soul-toolkit
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+toolkit --help
+```
+
+On the TryHackMe AttackBox the tools below are already installed; clone and `pip install -e .`.
+
+### 2. The tools it wraps
+
+The toolkit runs existing tools rather than reinventing them. Only nmap is required; a missing
+optional tool means that check is skipped with a warning and an install hint, never a crash.
 
 | Tool | Needed for | Arch / EndeavourOS | Kali |
 |---|---|---|---|
@@ -83,39 +115,31 @@ Requires **Python 3.9+** and **Linux**. The toolkit wraps existing tools rather 
 | `ffuf` | `web` vhost fuzzing (falls back to gobuster) | `sudo pacman -S ffuf` | `sudo apt install ffuf` |
 | `smbclient` | `smb` share listing | `sudo pacman -S smbclient` | `sudo apt install smbclient` |
 | `showmount` | `nfs` export listing | `sudo pacman -S nfs-utils` | `sudo apt install nfs-common` |
-| `snmpwalk`, `onesixtyone` | `snmp` checks | `sudo pacman -S net-snmp onesixtyone` | `sudo apt install snmp onesixtyone` |
+| `snmpwalk` | `snmp` checks | `sudo pacman -S net-snmp` | `sudo apt install snmp` |
+| `onesixtyone` | faster `snmp` community check (optional) | `yay -S onesixtyone` | `sudo apt install onesixtyone` |
 | `searchsploit` | `exploits` lookups | `yay -S exploitdb` | `sudo apt install exploitdb` |
 | SecLists | better wordlists (optional) | `yay -S seclists` | `sudo apt install seclists` |
 
-Missing optional tools are skipped with a warning, not a crash.
-
-Not sure what you have? `toolkit doctor` checks every tool, says what each one enables, and prints
-the install commands for what's missing (Arch, Debian/Kali and macOS; your platform first):
+`toolkit doctor` checks all of them, says what each one enables, and prints the exact install
+commands for what's missing - for Arch, Debian/Kali and macOS, your platform first:
 
 ```bash
 toolkit doctor          # what's installed, what's missing
 toolkit doctor --all    # install commands for everything (setting up a new machine)
 ```
 
-```bash
-git clone https://github.com/Soulsagate/soul-toolkit.git
-cd soul-toolkit
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-toolkit --help
-```
+### Running with sudo (SYN scans, UDP)
 
-On the TryHackMe AttackBox the tools are already installed; just clone and `pip install -e .`.
-
-### Running with sudo (faster SYN scans)
-
-Without root, nmap falls back to TCP connect scans (`-sT`), which work but are slower.
-Since the `toolkit` command lives in your venv, call it by path under sudo:
+Without root, nmap falls back to TCP connect scans (`-sT`), which work but are slower, and the UDP
+scan is skipped. `sudo toolkit` usually fails because sudo resets your PATH, so call it by path -
+this works for both the pipx and the venv install:
 
 ```bash
 sudo "$(which toolkit)" recon 10.10.42.17
 ```
+
+Results are handed back to your user (no root-owned files in your folders), and your own config
+file is used, not root's.
 
 ## Usage
 

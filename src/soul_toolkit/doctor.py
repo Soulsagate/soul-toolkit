@@ -116,7 +116,7 @@ def run_doctor(show_all: bool = False, out=None) -> int:
     try:
         cfg_values, cfg_profile, _ = load_config(cfg_path)
         cfg_state = (f"{len(cfg_values)} setting(s)" + (f", profile {cfg_profile}" if cfg_profile else "")
-                     if cfg_path.is_file() else "none - defaults (toolkit config --init to create one)")
+                     if cfg_path.is_file() else "none - using defaults; toolkit config --init creates one")
     except ConfigError as exc:
         cfg_state = f"ERROR: {exc}"
     say(f"  config: {cfg_path} ({cfg_state})")
