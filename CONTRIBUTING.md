@@ -65,3 +65,12 @@ interface, registering it, giving its lead a score, tests, and docs.
 One focused commit per change, with a message that says what changed and **why** - note any
 non-obvious decision (a default you picked, something you deliberately didn't do). Add a line to
 [CHANGELOG.md](CHANGELOG.md) under "Unreleased".
+
+## Releasing
+
+1. Move the "Unreleased" entries into a dated `## X.Y.Z - YYYY-MM-DD` section of CHANGELOG.md and
+   set the same version in `pyproject.toml` and `src/soul_toolkit/__init__.py`.
+2. Once CI is green on main, push an annotated tag:
+   `git tag -a vX.Y.Z -m "soul-toolkit vX.Y.Z" && git push origin vX.Y.Z`.
+3. The Release workflow publishes the GitHub release, with that CHANGELOG section as its notes
+   (`scripts/release_notes.py`). It refuses to publish if the tag and the code disagree.
