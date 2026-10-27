@@ -108,10 +108,18 @@ open or relocate it) gets:
 
 - **`report.md`** - Where to start, open ports, findings by severity, nmap script output, every
   command that was run. Full sample: **[docs/sample-report.md](docs/sample-report.md)**
-- **`report.html`** - the same in one self-contained file: light/dark, collapsible findings,
-  severity colours, a Copy button on every command. Sample:
-  [docs/sample-report.html](docs/sample-report.html) (download and open it)
+- **`report.html`** - the same in one self-contained file you can open offline: a summary card,
+  section nav, findings you can filter by severity, a Copy button on every command, light and
+  dark themes, and a print stylesheet. No CDNs, fonts or other network requests, and it reads
+  fine with JavaScript off. Sample: [docs/sample-report.html](docs/sample-report.html)
+  (download and open it)
 - **`findings.json`** - everything, for your own scripts
+
+| Light | Dark |
+|---|---|
+| ![HTML report, light theme: summary card and Where to start](docs/report-light.png) | ![HTML report, dark theme: findings with severity filter](docs/report-dark.png) |
+
+Both screenshots are of the sample report above, from a real run against the [lab](tests/lab).
 
 ### 3. A writeup that's already started
 

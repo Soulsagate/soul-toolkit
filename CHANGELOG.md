@@ -13,6 +13,16 @@ All notable changes to this project. The format is based on
   report. The README's Output section explains where results go, how to open them, and how to
   keep them in one place with `-o` or the config file.
 
+### Changed
+
+- Redesigned the HTML report. It now has a summary card with severity chips, a sticky section
+  nav (sidebar on wide screens, top bar on phones), and "Where to start" as numbered cards with a
+  Copy button. Findings are cards you can filter by severity and expand or collapse all at once.
+  The tables are easier to read, with HTTP status codes in colour and UDP ports marked. An
+  interrupted run gets a clear "Partial report" banner. Light and dark themes meet WCAG AA
+  contrast, and the page works at phone width. It prints in the light theme with every section
+  expanded. It is still one offline file: no network requests, and readable with JavaScript off.
+
 ### Fixed
 
 - `toolkit doctor` on plain Debian, Ubuntu, Linux Mint and LMDE printed one `apt install` line that
