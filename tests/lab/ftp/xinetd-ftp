@@ -1,0 +1,14 @@
+service ftp
+{
+    socket_type = stream
+    protocol    = tcp
+    port        = 21
+    wait        = no
+    user        = root
+    server      = /usr/sbin/vsftpd
+    server_args = /etc/vsftpd.conf
+    instances   = UNLIMITED
+    per_source  = UNLIMITED
+    cps         = 1000 1
+    disable     = no
+}
