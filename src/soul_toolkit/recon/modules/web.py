@@ -5,7 +5,6 @@ from __future__ import annotations
 import html
 import ipaddress
 import re
-import socket
 import ssl
 import time
 import urllib.error
@@ -544,15 +543,7 @@ class WebModule(Module):
 
 
 def _target_ip(ctx: Context) -> str:
-    """The IP to put in /etc/hosts lines: the target, nmap's resolved address, or a DNS lookup."""
-    if _is_ip(ctx.target):
-        return ctx.target
-    if ctx.result.address:
-        return ctx.result.address
-    try:
-        return socket.gethostbyname(ctx.target)
-    except OSError:
-        return "<target-ip>"
+    return ctx.target_ip()
 
 
 def _is_ip(host: str) -> bool:

@@ -38,6 +38,9 @@ It runs recon in stages, and each stage decides what the next one does:
 | `mysql` | MySQL / MariaDB (3306) | version from the server greeting; tries `root` and the anonymous account with an empty password (one login each, nothing else) |
 | `postgres` | PostgreSQL (5432) | asks how user `postgres` must log in: `trust` (no password at all) is flagged, otherwise the method (SCRAM / md5) is noted |
 | `redis` | Redis (6379) | one unauthenticated `INFO`: version, role, config path and how many keys it holds; tells *needs a password* and *protected mode* apart |
+| `rdp` | RDP (3389) | host/domain names and the Windows release from nmap's NTLM info, `/etc/hosts` line for the domain, BlueKeep check command on Windows 7 / 2008 R2, `xfreerdp` for later |
+| `winrm` | WinRM (5985 / 5986) | notes + the `evil-winrm` command for when you have credentials |
+| `ldap` | LDAP (389 / 636 / 3268 / 3269) | AD domain and DC name from nmap, `/etc/hosts` line, `ldapsearch` anonymous-read command |
 | `exploits` | any service with a product + version | `searchsploit` lookup, deduped across ports, top matches with EDB-IDs (remote exploits first) |
 
 Each module is one small file in [`src/soul_toolkit/recon/modules/`](src/soul_toolkit/recon/modules/). Adding a service = one class with `matches()` and `run()`.

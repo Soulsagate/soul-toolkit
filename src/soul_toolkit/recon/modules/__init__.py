@@ -7,7 +7,9 @@ Each module looks at one open service and decides whether it applies
 
 from __future__ import annotations
 
+import ipaddress
 import shlex
+import socket
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -55,8 +57,30 @@ class Context:
         """Report something worth trying next. Its rank comes from `kind` (see recon/leads.py)."""
         self.result.leads.append(Lead(kind, port, title, why, command, score_for(kind)))
 
+    def target_ip(self) -> str:
+        """The IP to put in /etc/hosts lines: the target, nmap's resolved address, or a DNS lookup."""
+        try:
+            ipaddress.ip_address(self.target)
+            return self.target
+        except ValueError:
+            pass
+        if self.result.address:
+            return self.result.address
+        try:
+            return socket.gethostbyname(self.target)
+        except OSError:
+            return "<target-ip>"
+
     def host_for_url(self) -> str:
         return f"[{self.target}]" if ":" in self.target else self.target
+
+
+def hosts_command(ip: str, names: list[str]) -> str:
+    """`echo '<ip> <names>' | sudo tee -a /etc/hosts`, names deduped and ordered most-specific first, so
+    two modules that learn the same names produce the same command (and the same lead)."""
+    clean = {n.strip().strip(".").lower() for n in names if n and n.strip().strip(".")}
+    ordered = sorted(clean, key=lambda n: (-n.count("."), n))
+    return f"echo '{ip} {' '.join(ordered)}' | sudo tee -a /etc/hosts"
 
 
 class Module:
@@ -74,19 +98,22 @@ class Module:
 def all_modules() -> list[Module]:
     from soul_toolkit.recon.modules.exploits import ExploitsModule
     from soul_toolkit.recon.modules.ftp import FtpModule
+    from soul_toolkit.recon.modules.ldap import LdapModule
     from soul_toolkit.recon.modules.mysql import MysqlModule
     from soul_toolkit.recon.modules.nfs import NfsModule
     from soul_toolkit.recon.modules.postgres import PostgresModule
+    from soul_toolkit.recon.modules.rdp import RdpModule
     from soul_toolkit.recon.modules.redis import RedisModule
     from soul_toolkit.recon.modules.smb import SmbModule
     from soul_toolkit.recon.modules.smtp import SmtpModule
     from soul_toolkit.recon.modules.snmp import SnmpModule
     from soul_toolkit.recon.modules.ssh import SshModule
     from soul_toolkit.recon.modules.web import WebModule
+    from soul_toolkit.recon.modules.winrm import WinrmModule
 
     return [
         WebModule(), FtpModule(), SshModule(), SmbModule(), NfsModule(), SmtpModule(), SnmpModule(), MysqlModule(),
-        PostgresModule(), RedisModule(),
+        PostgresModule(), RedisModule(), RdpModule(), WinrmModule(), LdapModule(),
         ExploitsModule(),  # last: it reads every service, so its leads land after the specific ones
     ]
 

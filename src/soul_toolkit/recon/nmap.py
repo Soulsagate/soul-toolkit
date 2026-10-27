@@ -135,6 +135,16 @@ def parse_ports(spec: str) -> list[int]:
     return sorted(ports)
 
 
+def script_fields(output: str) -> dict[str, str]:
+    """`Key: value` lines of an NSE script's output (rdp-ntlm-info, smb-os-discovery, ...) as a dict."""
+    fields = {}
+    for line in output.splitlines():
+        key, sep, value = line.strip().partition(":")
+        if sep and key and " " not in key.strip() and value.strip():
+            fields[key.strip()] = value.strip()
+    return fields
+
+
 def parse_xml(xml_text: str) -> list[NmapHost]:
     """Parse nmap -oX output. Only ports in state 'open' are kept."""
     if not xml_text or not xml_text.strip():
@@ -182,6 +192,7 @@ def parse_xml(xml_text: str) -> list[NmapHost]:
                 svc.version = svc_el.get("version", "")
                 svc.extrainfo = svc_el.get("extrainfo", "")
                 svc.tunnel = svc_el.get("tunnel", "")
+                svc.hostname = svc_el.get("hostname", "")
             svc.scripts = {
                 s.get("id", "?"): (s.get("output") or "").strip() for s in p.findall("script")
             }

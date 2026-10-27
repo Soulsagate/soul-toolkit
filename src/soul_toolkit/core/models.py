@@ -22,6 +22,7 @@ class Service:
     extrainfo: str = ""
     tunnel: str = ""
     scripts: dict[str, str] = field(default_factory=dict)
+    hostname: str = ""  # name the service itself reported (nmap -sV), e.g. a domain controller's
 
     @property
     def label(self) -> str:

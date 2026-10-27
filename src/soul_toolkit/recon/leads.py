@@ -30,6 +30,7 @@ SCORES: dict[str, int] = {
     "web-vhosts": 75,            # extra virtual hosts discovered
     "web-vhost": 70,             # redirect to a name-based vhost
     "mysql-anon": 70,            # anonymous database login
+    "ad-hosts": 68,              # Windows domain names to add to /etc/hosts
     "exploit-remote": 65,        # other remote/webapps Exploit-DB matches
     "web-paths": 60,             # interesting paths from content discovery
     "web-wordpress": 60,
@@ -38,11 +39,15 @@ SCORES: dict[str, int] = {
     "smtp-vrfy": 50,             # SMTP VRFY/EXPN enumerate usernames
     "web-robots": 45,
     "smb-enum": 40,              # SMB answers but no share listing
+    "ldap-anon": 45,             # anonymous LDAP read check
+    "rdp-bluekeep": 35,          # old Windows build exposing RDP
     "exploit-local": 25,         # only local/DoS matches - useful after a foothold
     "web-browse": 20,
     "rescan": 15,                # the scan itself was limited
     "udp": 12,                   # UDP wasn't scanned
+    "winrm-later": 12,           # WinRM: shell once you have credentials
     "ssh-later": 10,
+    "rdp-later": 10,
     "db-later": 8,               # database that wants a password
 }
 
