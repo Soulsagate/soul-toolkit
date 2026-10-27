@@ -124,6 +124,7 @@ toolkit recon TARGET [options]
 
 scanning:
   -p, --ports PORTS       skip the sweep and scan these ports (22,80,8000-8010)
+  --profile NAME          quick | default | thorough (see below); explicit flags still win
   --quick                 top 1000 ports instead of all 65535
   --min-rate N            nmap --min-rate for the sweep (default 1000, 0 = nmap default)
   --ping                  do host discovery (default is -Pn; lab boxes often drop ping)
@@ -150,6 +151,16 @@ output:
   -v, --verbose           print every command as it runs
   -q, --quiet             warnings and errors only
 ```
+
+### Profiles
+
+| Profile | What it does |
+|---|---|
+| `quick` | top 1000 TCP ports, no UDP, no vhost fuzzing, one gobuster pass, 3 min web budget per port |
+| `default` | all TCP ports, top 100 UDP when root, vhost fuzzing, one level of recursion, 10 min web budget |
+| `thorough` | default + UDP even with `-p` (root), SecLists' bigger lists (raft-medium, subdomains-top1million-20000) when installed, 30 min web budget |
+
+Any flag you pass on top overrides the profile: `--profile quick --udp` is quick, plus UDP.
 
 Common patterns:
 

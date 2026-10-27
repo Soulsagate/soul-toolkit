@@ -10,6 +10,7 @@ from soul_toolkit import __version__
 from soul_toolkit.core.log import Logger
 from soul_toolkit.core.runner import ToolMissing
 from soul_toolkit.core.target import InvalidTarget, validate_target
+from soul_toolkit.recon.settings import PROFILE_HELP
 
 BANNER = f"soul-toolkit v{__version__} :: authorized targets only (see DISCLAIMER.md)"
 
@@ -36,12 +37,17 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
 
     scan = p.add_argument_group("scanning")
     scan.add_argument("-p", "--ports", help="skip the port sweep and use these ports (e.g. 22,80,8000-8010)")
-    scan.add_argument("--quick", action="store_true", help="sweep the top 1000 ports instead of all 65535")
-    scan.add_argument("--min-rate", type=int, default=1000, metavar="N",
+    scan.add_argument("--profile", choices=["quick", "default", "thorough"],
+                      help="bundle of sensible settings: " + "; ".join(f"{k} = {v}" for k, v in PROFILE_HELP.items())
+                      + ". Explicit flags still win")
+    scan.add_argument("--quick", action="store_true", default=None,
+                      help="sweep the top 1000 ports instead of all 65535")
+    scan.add_argument("--min-rate", type=int, metavar="N",
                       help="nmap --min-rate for the sweep (default 1000; 0 = nmap default)")
     scan.add_argument("--ping", action="store_true",
                       help="do host discovery (default is -Pn, since lab boxes often drop ping)")
-    scan.add_argument("--no-scripts", action="store_true", help="skip nmap default scripts (-sC)")
+    scan.add_argument("--no-scripts", dest="scripts", action="store_false", default=None,
+                      help="skip nmap default scripts (-sC)")
     udp = scan.add_mutually_exclusive_group()
     udp.add_argument("--udp", dest="udp", action="store_true", default=None,
                      help="scan the top 100 UDP ports (needs root; on by default as root unless -p is given)")
@@ -51,21 +57,23 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
     mods.add_argument("-m", "--modules", help="comma-separated modules to run (default: all)")
     mods.add_argument("--no-modules", action="store_true", help="nmap only, no follow-up modules")
     mods.add_argument("--list-modules", action="store_true", help="list available modules and exit")
-    mods.add_argument("--no-brute", action="store_true", help="skip content discovery and vhost fuzzing")
-    mods.add_argument("--no-vhost", action="store_true", help="skip vhost fuzzing only")
+    mods.add_argument("--no-brute", dest="brute", action="store_false", default=None,
+                      help="skip content discovery and vhost fuzzing")
+    mods.add_argument("--no-vhost", dest="vhosts", action="store_false", default=None,
+                      help="skip vhost fuzzing only")
     mods.add_argument("--vhost-wordlist", metavar="FILE",
                       help="wordlist for vhost fuzzing (default: SecLists subdomains-top1million-5000.txt if found)")
     mods.add_argument("-w", "--wordlist", help="wordlist for gobuster (default: SecLists common.txt if found)")
-    mods.add_argument("-x", "--extensions", default="",
+    mods.add_argument("-x", "--extensions",
                       help="extensions for gobuster, e.g. php,txt,html (default: picked from the fingerprint)")
-    mods.add_argument("--no-recurse", action="store_true",
+    mods.add_argument("--no-recurse", dest="recurse", action="store_false", default=None,
                       help="don't run gobuster again inside the directories it finds")
-    mods.add_argument("-t", "--threads", type=int, default=30, help="gobuster threads (default 30)")
-    mods.add_argument("--brute-timeout", type=int, default=600, metavar="SEC",
+    mods.add_argument("-t", "--threads", type=int, help="gobuster/ffuf threads (default 30)")
+    mods.add_argument("--brute-timeout", type=int, metavar="SEC",
                       help="max seconds of content discovery per web port, recursion included (default 600)")
 
     out = p.add_argument_group("output")
-    out.add_argument("-o", "--output", default="results", help="output directory (default: ./results)")
+    out.add_argument("-o", "--output", help="output directory (default: ./results)")
     out.add_argument("--writeup", action="store_true",
                      help="also write writeup.md: an Obsidian-friendly skeleton with the Recon section filled in")
     out.add_argument("--room", metavar="NAME", help="room/box name for the writeup (implies --writeup; "
@@ -81,6 +89,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
     from soul_toolkit.recon import nmap
     from soul_toolkit.recon.engine import ReconConfig, run_recon
     from soul_toolkit.recon.modules import Options, all_modules, select_modules
+    from soul_toolkit.recon.settings import DEFAULTS, resolve
 
     log = Logger(verbose=args.verbose, quiet=args.quiet)
 
@@ -100,37 +109,39 @@ def cmd_recon(args: argparse.Namespace) -> int:
             modules = []
         else:
             modules = select_modules(args.modules.split(",") if args.modules else None)
+        profile = args.profile or "default"
+        s = resolve({k: getattr(args, k, None) for k in DEFAULTS}, profile)
     except (InvalidTarget, ValueError) as exc:
         log.error(str(exc))
         return 2
 
     cfg = ReconConfig(
         target=target,
-        output=Path(args.output),
+        output=Path(s["output"]).expanduser(),
         ports=ports,
-        full=not args.quick,
-        min_rate=args.min_rate or None,
+        full=not s["quick"],
+        min_rate=s["min_rate"] or None,
         skip_ping=not args.ping,
-        scripts=not args.no_scripts,
-        udp=args.udp,
+        scripts=s["scripts"],
+        udp=s["udp"],
         modules=modules,
         writeup=args.writeup or bool(args.room),
         room=args.room,
         options=Options(
-            brute=not args.no_brute,
-            wordlist=args.wordlist,
-            threads=max(1, args.threads),
-            brute_timeout=max(10, args.brute_timeout),
-            extensions=args.extensions,
-            recurse=not args.no_recurse,
-            vhosts=not args.no_vhost,
-            vhost_wordlist=args.vhost_wordlist,
+            brute=s["brute"],
+            wordlist=s["wordlist"],
+            threads=max(1, s["threads"]),
+            brute_timeout=max(10, s["brute_timeout"]),
+            extensions=s["extensions"],
+            recurse=s["recurse"],
+            vhosts=s["vhosts"],
+            vhost_wordlist=s["vhost_wordlist"],
         ),
     )
 
     if not args.quiet:
         log.info(BANNER)
-        log.info(f"Target: {target}")
+        log.info(f"Target: {target}" + (f"  (profile: {profile})" if args.profile else ""))
     try:
         run_recon(cfg, log)
     except ToolMissing as exc:
