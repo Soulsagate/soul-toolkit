@@ -22,6 +22,12 @@ install against a TryHackMe box with SSH, HTTP, POP3 and IMAP.
   hand (`curl -u '<user>:<password>' pop3://...`, or `nc` then `USER` / `PASS` / `RETR`). Recon
   only: it works from nmap's results and never logs in or guesses passwords. Writeups get a
   `mail` tag.
+- **Files worth reading.** Text-like files that content discovery finds with a 2xx (`.txt`,
+  `.bak`, `.old`, `.log`, `.md`, `.conf`, `.xml`, `.json`, `security.txt`, `humans.txt`...),
+  except robots.txt, are listed as a "Files worth reading" finding. A lead, ranked like the
+  interesting-paths one, gives a `curl` command for the most promising file and lists the rest.
+  Backups, dumps, configs and logs come first. The tester's box had a `/security.txt` that recon
+  listed but never pointed at.
 
 ### Fixed
 

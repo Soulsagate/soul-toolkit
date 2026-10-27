@@ -36,6 +36,13 @@ INTERESTING = (
     "cgi-bin", "shell", "debug", "test", "old", "staging", "internal",
 )
 
+# Files content discovery finds that are worth simply reading (notes, backups, configs, logs,
+# security.txt / humans.txt...). Backups, dumps, configs and logs first, then the rest.
+TEXT_FILE_EXTS = (".bak", ".old", ".orig", ".save", ".sql", ".conf", ".cfg", ".ini", ".env", ".log",
+                  ".txt", ".md", ".xml", ".json", ".yml", ".yaml", ".csv")
+_FIRST_TEXT_EXTS = TEXT_FILE_EXTS[:10]
+SKIP_FILES = {"robots.txt"}  # robots.txt has its own finding and lead
+
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 _GB_LINE = re.compile(
     r"^(?P<path>\S+)\s+\(Status:\s*(?P<status>\d+)\)\s*\[Size:\s*(?P<size>\d+)\]"
@@ -238,6 +245,17 @@ def parse_gobuster(output: str) -> list[dict]:
             }
         )
     return results
+
+
+def readable_files(hits: list[dict]) -> list[dict]:
+    """2xx hits whose name looks like a text file worth reading, most promising first."""
+    files = []
+    for h in hits:
+        name = h["path"].rstrip("/").rsplit("/", 1)[-1].lower()
+        if (200 <= h["status"] < 300 and name.endswith(TEXT_FILE_EXTS) and name not in SKIP_FILES
+                and not h["path"].startswith("/.git") and h.get("size") != 0):
+            files.append(h)
+    return sorted(files, key=lambda h: (not h["path"].lower().endswith(_FIRST_TEXT_EXTS), h["path"]))
 
 
 def is_interesting(path: str) -> bool:
@@ -461,6 +479,15 @@ class WebModule(Module):
                  "(admin panels, backups, config, uploads).",
                  f"curl -si {base}{juicy[0]['path']}")
 
+    def _files_lead(self, ctx: Context, svc: Service, base: str, files: list[dict]) -> None:
+        first, rest = files[0]["path"], [h["path"] for h in files[1:]]
+        more = f" and {len(rest)} more" if rest else ""
+        also = f" Also: {', '.join(rest[:8])}{', ...' if len(rest) > 8 else ''}." if rest else ""
+        ctx.lead("web-files", svc.port, f"Read {first}{more}",
+                 "Content discovery found text files that open (notes, backups, configs, logs, security.txt): "
+                 f"they often name users, hosts, versions or passwords.{also}",
+                 f"curl -s {base}{first}")
+
     def _content_discovery(self, ctx: Context, svc: Service, base: str,
                            page: HttpResponse | None) -> list[Finding]:
         if not runner.which("gobuster"):
@@ -530,10 +557,17 @@ class WebModule(Module):
                                              "hidden_default_deny": hidden}))
             juicy = sorted((h for h in hits if is_interesting(h["path"]) and not _default_deny(h)),
                            key=_path_priority)
+            files = readable_files(hits)
             if juicy:
                 findings.append(Finding(self.name, svc.port, "Interesting paths worth checking", "medium",
                                         ", ".join(h["path"] for h in juicy[:15]), {"paths": juicy}))
-                self._paths_lead(ctx, svc, base, juicy)
+                # files get their own "read these" lead below; don't spend this one on them too
+                file_paths = {h["path"] for h in files}
+                self._paths_lead(ctx, svc, base, [h for h in juicy if h["path"] not in file_paths])
+            if files:
+                findings.append(Finding(self.name, svc.port, "Files worth reading", "low",
+                                        ", ".join(h["path"] for h in files[:15]), {"paths": files}))
+                self._files_lead(ctx, svc, base, files)
         else:
             findings.append(Finding(self.name, svc.port, "Content discovery: nothing found", "info",
                                     detail + ". Try a bigger list with --wordlist."))

@@ -34,6 +34,7 @@ SCORES: dict[str, int] = {
     "ad-hosts": 68,              # Windows domain names to add to /etc/hosts
     "exploit-remote": 58,        # other version-confirmed remote/webapps matches (below real discoveries)
     "web-paths": 60,             # interesting paths from content discovery
+    "web-files": 60,             # text files content discovery found (notes, backups, security.txt...)
     "web-wordpress": 60,
     "ftp-writable": 55,
     "nfs-restricted": 50,        # NFS export limited to some client IPs
