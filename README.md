@@ -36,6 +36,7 @@ It runs recon in stages, and each stage decides what the next one does:
 | `smtp` | SMTP (25 / 465 / 587) | banner + EHLO capabilities; checks whether VRFY / EXPN tell real users from made-up ones (one probe each) and hands you the `smtp-user-enum` command |
 | `snmp` | SNMP (161/udp) | tries the default `public` / `private` communities (`onesixtyone`, else `snmpwalk`), then reads system info, process command lines that look like they carry passwords, and Windows users |
 | `mysql` | MySQL / MariaDB (3306) | version from the server greeting; tries `root` and the anonymous account with an empty password (one login each, nothing else) |
+| `postgres` | PostgreSQL (5432) | asks how user `postgres` must log in: `trust` (no password at all) is flagged, otherwise the method (SCRAM / md5) is noted |
 | `exploits` | any service with a product + version | `searchsploit` lookup, deduped across ports, top matches with EDB-IDs (remote exploits first) |
 
 Each module is one small file in [`src/soul_toolkit/recon/modules/`](src/soul_toolkit/recon/modules/). Adding a service = one class with `matches()` and `run()`.

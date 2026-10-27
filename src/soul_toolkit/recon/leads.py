@@ -18,6 +18,7 @@ SCORES: dict[str, int] = {
     "backdoor": 100,             # a version with a known backdoor
     "ftp-fsroot": 95,            # anonymous FTP rooted at /
     "mysql-empty": 92,           # database root with no password
+    "postgres-trust": 92,        # PostgreSQL superuser with no password (trust)
     "web-git": 90,               # source code + history
     "ftp-webroot": 88,           # anonymous FTP that looks like the web root
     "nfs-world": 90,             # NFS export anyone can mount
