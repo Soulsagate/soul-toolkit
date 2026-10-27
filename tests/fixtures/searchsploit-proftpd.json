@@ -1,0 +1,11 @@
+{
+	"SEARCH": "proftpd 1.3.5",
+	"DB_PATH_EXPLOIT": "/usr/share/exploitdb",
+	"RESULTS_EXPLOIT": [
+		{"Title":"ProFTPd 1.3.5 - 'mod_copy' Command Execution (Metasploit)","EDB-ID":"37262","Date_Published":"2015-06-10","Date_Added":"2015-06-10","Date_Updated":"2017-08-29","Author":"Metasploit","Type":"remote","Platform":"linux","Port":"","Verified":"1","Codes":"CVE-2015-3306;OSVDB-120834","Tags":"Metasploit Framework (MSF)","Aliases":"","Screenshot":"","Application":"","Source":"","Path":"/usr/share/exploitdb/exploits/linux/remote/37262.rb"},
+		{"Title":"ProFTPd 1.3.5 - 'mod_copy' Remote Command Execution (2)","EDB-ID":"49908","Date_Published":"2021-05-26","Date_Added":"2021-05-26","Date_Updated":"2021-11-30","Author":"Shellbr3ak","Type":"remote","Platform":"linux","Port":"","Verified":"1","Codes":"CVE-2015-3306","Tags":"","Aliases":"","Screenshot":"","Application":"","Source":"","Path":"/usr/share/exploitdb/exploits/linux/remote/49908.py"},
+		{"Title":"ProFTPd 1.3.5 - 'mod_copy' Remote Command Execution","EDB-ID":"36803","Date_Published":"2015-04-21","Date_Added":"2015-04-21","Date_Updated":"2017-08-29","Author":"R-73eN","Type":"remote","Platform":"linux","Port":"","Verified":"0","Codes":"CVE-2015-3306;OSVDB-120834","Tags":"","Aliases":"","Screenshot":"","Application":"","Source":"","Path":"/usr/share/exploitdb/exploits/linux/remote/36803.py"},
+		{"Title":"ProFTPd 1.3.5 - File Copy","EDB-ID":"36742","Date_Published":"2015-04-13","Date_Added":"2015-04-14","Date_Updated":"2016-10-10","Author":"anonymous","Type":"remote","Platform":"linux","Port":"","Verified":"1","Codes":"CVE-2015-3306;OSVDB-120834","Tags":"","Aliases":"","Screenshot":"","Application":"","Source":"http://bugs.proftpd.org/show_bug.cgi?id=4169","Path":"/usr/share/exploitdb/exploits/linux/remote/36742.txt"}	],
+	"DB_PATH_SHELLCODE": "/usr/share/exploitdb",
+	"RESULTS_SHELLCODE": [	]
+}

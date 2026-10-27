@@ -1,0 +1,10 @@
+{
+	"SEARCH": "apache 2.4.29",
+	"DB_PATH_EXPLOIT": "/usr/share/exploitdb",
+	"RESULTS_EXPLOIT": [
+		{"Title":"Apache 2.4.17 < 2.4.38 - 'apache2ctl graceful' 'logrotate' Local Privilege Escalation","EDB-ID":"46676","Date_Published":"2019-04-08","Date_Added":"2019-04-08","Date_Updated":"2019-04-08","Author":"cfreal","Type":"local","Platform":"linux","Port":"","Verified":"0","Codes":"CVE-2019-0211","Tags":"","Aliases":"","Screenshot":"","Application":"","Source":"https://github.com/cfreal/exploits/blob/ba026fae59974037d744a90cef09224f751bc3e4/CVE-2019-0211-apache/cfreal-carpediem.php","Path":"/usr/share/exploitdb/exploits/linux/local/46676.php"},
+		{"Title":"Apache 2.4.23 mod_http2 - Denial of Service","EDB-ID":"40909","Date_Published":"2016-12-12","Date_Added":"2016-12-12","Date_Updated":"2016-12-14","Author":"Jungun Baek","Type":"dos","Platform":"linux","Port":"","Verified":"0","Codes":"CVE-2016-8740","Tags":"","Aliases":"","Screenshot":"","Application":"http://www.exploit-db.comhttpd-2.4.23.tar.gz","Source":"","Path":"/usr/share/exploitdb/exploits/linux/dos/40909.py"},
+		{"Title":"Apache 2.4.x - Buffer Overflow","EDB-ID":"51193","Date_Published":"2023-04-01","Date_Added":"2023-04-01","Date_Updated":"2023-06-07","Author":"Sunil Iyengar","Type":"webapps","Platform":"multiple","Port":"","Verified":"1","Codes":"CVE-2021-44790","Tags":"","Aliases":"","Screenshot":"","Application":"","Source":"","Path":"/usr/share/exploitdb/exploits/multiple/webapps/51193.py"}	],
+	"DB_PATH_SHELLCODE": "/usr/share/exploitdb",
+	"RESULTS_SHELLCODE": [	]
+}

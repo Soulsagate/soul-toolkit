@@ -70,7 +70,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
 
     if args.list_modules:
         for m in all_modules():
-            print(f"{m.name:<6} {m.description}")
+            print(f"{m.name:<9} {m.description}")
         return 0
 
     if not args.target:

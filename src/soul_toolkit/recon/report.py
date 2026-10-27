@@ -128,6 +128,12 @@ def _finding_body(data: dict) -> str:
     for key in ("listing", "entries"):
         if key in data:
             return _fence("\n".join(data[key]))
+    if "exploits" in data:
+        rows = ["| EDB-ID | Title | Type | Verified |", "|---|---|---|---|"]
+        rows += [f"| {e['edb_id']} | {_cell(e['title'])} | {e['type'] or '-'} | {'yes' if e['verified'] else 'no'} |"
+                 for e in data["exploits"]]
+        rows += ["", "Read one with `searchsploit -x <EDB-ID>`, copy it here with `searchsploit -m <EDB-ID>`."]
+        return "\n".join(rows)
     if "shares" in data:
         rows = ["| Share | Type | Comment |", "|---|---|---|"]
         rows += [f"| `{s['name']}` | {s['type']} | {_cell(s['comment'])} |" for s in data["shares"]]

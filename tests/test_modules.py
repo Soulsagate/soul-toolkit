@@ -71,7 +71,7 @@ def test_ssh_module_flags_old_openssh(tmp_path):
 
 
 def test_select_modules():
-    assert {m.name for m in select_modules(None)} == {"web", "ftp", "ssh", "smb"}
+    assert {m.name for m in select_modules(None)} == {"web", "ftp", "ssh", "smb", "exploits"}
     assert [m.name for m in select_modules(["web"])] == ["web"]
     with pytest.raises(ValueError):
         select_modules(["nope"])
