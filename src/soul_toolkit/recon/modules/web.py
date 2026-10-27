@@ -274,7 +274,7 @@ class GobusterRun:
 
 class WebModule(Module):
     name = "web"
-    description = "HTTP(S): fingerprint, vhost redirects, robots.txt, exposed .git, gobuster dir brute-force"
+    description = "HTTP(S): fingerprint, vhost redirects + fuzzing, robots.txt, .git, gobuster with recursion"
 
     def matches(self, svc: Service) -> bool:
         return svc.is_web
