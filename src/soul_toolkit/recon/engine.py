@@ -172,7 +172,7 @@ def _finish(cfg: ReconConfig, result: HostResult, outdir: Path, t0: float, log: 
     log.ok(f"Done in {result.duration:.0f}s - {len(result.services)} open port(s), "
            f"{len(result.findings)} finding(s) ({high} medium/high)")
     print_where_to_start(result, log)
-    log.ok(f"Report: {md}")
+    log.ok(f"Report: {md}  (HTML: {md.with_suffix('.html').name})")
     if cfg.writeup:
         log.ok(f"Writeup: {write_writeup(result, outdir, cfg.room)}")
     log.debug(f"JSON:   {js}")

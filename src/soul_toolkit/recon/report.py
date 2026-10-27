@@ -1,4 +1,4 @@
-"""Turn a HostResult into a Markdown report and a JSON dump."""
+"""Turn a HostResult into a Markdown report, an HTML report and a JSON dump."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 from soul_toolkit import __version__
 from soul_toolkit.core.models import HostResult
 from soul_toolkit.recon import leads as leads_mod
+from soul_toolkit.recon.report_html import render_html
 
 _BADGE = {"high": "🔴 HIGH", "medium": "🟠 MEDIUM", "low": "🟡 LOW", "info": "🔵 INFO"}
 
@@ -183,9 +184,11 @@ def scrub(text: str) -> str:
 
 
 def write_reports(r: HostResult, outdir: Path) -> tuple[Path, Path]:
+    """Write report.md, report.html and findings.json. Returns (report.md, findings.json)."""
     outdir.mkdir(parents=True, exist_ok=True)
     md = outdir / "report.md"
     js = outdir / "findings.json"
     md.write_text(scrub(render_markdown(r)), encoding="utf-8")
+    md.with_suffix(".html").write_text(scrub(render_html(r)), encoding="utf-8")
     js.write_text(scrub(json.dumps(r.to_dict(), indent=2)), encoding="utf-8")
     return md, js
