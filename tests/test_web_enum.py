@@ -225,3 +225,27 @@ def test_real_gobuster_recursion(tmp_path):
         assert summary.data["extensions"] == "php,txt,bak"
     finally:
         srv.shutdown()
+
+
+def test_default_deny_403s_are_not_interesting_leads(tmp_path):
+    from soul_toolkit.core.log import Logger
+    from soul_toolkit.core.models import HostResult, Service
+    from soul_toolkit.recon.modules import Context, Options
+    from soul_toolkit.recon.modules import web as w
+
+    hits = [
+        {"path": "/.htpasswd", "status": 403, "size": 298, "redirect": ""},
+        {"path": "/server-status", "status": 403, "size": 302, "redirect": ""},
+        {"path": "/app/.htpasswd.txt", "status": 403, "size": 309, "redirect": ""},
+        {"path": "/app/_test", "status": 301, "size": 323, "redirect": "/app/_test/"},
+        {"path": "/app/web.config.txt", "status": 200, "size": 1859, "redirect": ""},
+        {"path": "/admin", "status": 403, "size": 280, "redirect": ""},
+    ]
+    assert w._default_deny(hits[0]) and w._default_deny(hits[1]) and w._default_deny(hits[2])
+    assert not w._default_deny(hits[3]) and not w._default_deny(hits[5])  # a 403 /admin still matters
+    ctx = Context("10.10.10.10", tmp_path, Logger(quiet=True, colour=False), HostResult("10.10.10.10"), Options())
+    w.WebModule()._paths_lead(ctx, Service(80, name="http"), "http://10.10.10.10", hits)
+    [lead] = ctx.result.leads
+    assert ".htpasswd" not in lead.title and "server-status" not in lead.title
+    assert lead.command == "curl -si http://10.10.10.10/app/web.config.txt"   # an openable path first
+    assert lead.title.index("/app/_test") < lead.title.index("/admin")       # 403s last

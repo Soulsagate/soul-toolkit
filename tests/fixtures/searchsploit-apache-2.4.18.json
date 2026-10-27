@@ -1,0 +1,14 @@
+{
+	"SEARCH": "apache 2.4.18",
+	"DB_PATH_EXPLOIT": "/usr/share/exploitdb",
+	"RESULTS_EXPLOIT": [
+		{"Title":"Apache + PHP < 5.3.12 / < 5.4.2 - cgi-bin Remote Code Execution","EDB-ID":"29290","Type":"remote","Platform":"linux","Verified":"1","Codes":"","Path":"/usr/share/exploitdb/exploits/linux/remote/29290.c"},
+		{"Title":"Apache mod_ssl < 2.8.7 OpenSSL - 'OpenFuck.c' Remote Buffer Overflow","EDB-ID":"21671","Type":"remote","Platform":"unix","Verified":"1","Codes":"","Path":"/usr/share/exploitdb/exploits/unix/remote/21671.c"},
+		{"Title":"Apache Tomcat < 6.0.18 - 'utf8' Directory Traversal","EDB-ID":"14489","Type":"remote","Platform":"multiple","Verified":"1","Codes":"","Path":"/usr/share/exploitdb/exploits/multiple/remote/14489.c"},
+		{"Title":"Apache Tomcat < 5.5.17 - Remote Directory Listing","EDB-ID":"2061","Type":"remote","Platform":"multiple","Verified":"1","Codes":"","Path":"/usr/share/exploitdb/exploits/multiple/remote/2061.txt"},
+		{"Title":"Apache 2.4.17 < 2.4.38 - 'apache2ctl graceful' 'logrotate' Local Privilege Escalation","EDB-ID":"46676","Type":"local","Platform":"linux","Verified":"0","Codes":"CVE-2019-0211","Path":"/usr/share/exploitdb/exploits/linux/local/46676.php"},
+		{"Title":"Apache 2.4.23 mod_http2 - Denial of Service","EDB-ID":"40909","Type":"dos","Platform":"linux","Verified":"0","Codes":"","Path":"/usr/share/exploitdb/exploits/linux/dos/40909.py"}
+	],
+	"DB_PATH_SHELLCODE": "/usr/share/exploitdb",
+	"RESULTS_SHELLCODE": []
+}

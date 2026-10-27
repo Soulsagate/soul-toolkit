@@ -31,7 +31,7 @@ SCORES: dict[str, int] = {
     "web-vhost": 70,             # redirect to a name-based vhost
     "mysql-anon": 70,            # anonymous database login
     "ad-hosts": 68,              # Windows domain names to add to /etc/hosts
-    "exploit-remote": 65,        # other remote/webapps Exploit-DB matches
+    "exploit-remote": 58,        # other version-confirmed remote/webapps matches (below real discoveries)
     "web-paths": 60,             # interesting paths from content discovery
     "web-wordpress": 60,
     "ftp-writable": 55,
@@ -41,7 +41,9 @@ SCORES: dict[str, int] = {
     "smb-enum": 40,              # SMB answers but no share listing
     "ldap-anon": 45,             # anonymous LDAP read check
     "rdp-bluekeep": 35,          # old Windows build exposing RDP
-    "exploit-local": 25,         # only local/DoS matches - useful after a foothold
+    "exploit-range": 35,         # Exploit-DB title matches whose version range we can't confirm
+    "exploit-enum": 30,          # the only confirmed matches are username enumeration
+    "exploit-local": 25,         # only local matches - useful after a foothold
     "web-browse": 20,
     "rescan": 15,                # the scan itself was limited
     "udp": 12,                   # UDP wasn't scanned

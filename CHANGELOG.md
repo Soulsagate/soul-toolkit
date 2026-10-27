@@ -41,6 +41,17 @@ install commands that work on every major distro, and runs that tell you where y
   installed from their upstream repos (`/opt/exploitdb` + a `searchsploit` symlink,
   `/usr/share/seclists`), which is where recon already looks.
 - Checked against gobuster 3.5 (Debian 12 / LMDE 6's version) as well as 3.6 and 3.8.
+- **Smarter Exploit-DB leads**, from the first real run against a TryHackMe box. searchsploit
+  matches titles and version ranges loosely, and three kinds of noise were outranking real
+  discoveries in "Where to start":
+  - DoS-only matches (Exploit-DB files some as "remote") no longer become leads.
+  - For Apache httpd, titles about other Apache projects (Tomcat, Struts, ...) are dropped.
+  - Each title's version range is checked against the detected version for *that* product
+    (`OpenSSH 2.3 < 7.7` covers 7.2p2; `Apache + PHP < 5.3.12` is PHP's range, not httpd's).
+    Unconfirmed matches become a low-ranked "check whether these really apply" lead, confirmed
+    username-enumeration a weak one, and only confirmed code execution stays near the top.
+- Interesting web paths: Apache's stock 403s (`.ht*`, `server-status`) are no longer listed or
+  used as the lead, and paths you can open (2xx, then directories) come first.
 
 ## 0.2.0 - 2026-10-27
 

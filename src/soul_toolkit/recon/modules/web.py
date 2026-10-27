@@ -245,6 +245,19 @@ def is_interesting(path: str) -> bool:
     return any(k in p for k in INTERESTING)
 
 
+def _default_deny(hit: dict) -> bool:
+    """A 403 on a .ht* file (or server-status) is the stock Apache config, not a finding."""
+    name = hit["path"].rstrip("/").rsplit("/", 1)[-1].lower()
+    return hit["status"] == 403 and (name.startswith(".ht") or name == "server-status")
+
+
+def _path_priority(hit: dict) -> tuple[int, int]:
+    """Paths you can actually open first: 2xx, then redirects (directories), auth prompts, 403s."""
+    s = hit["status"]
+    group = 0 if 200 <= s < 300 else 1 if 300 <= s < 400 else 2 if s == 401 else 3
+    return group, hit["path"].count("/")
+
+
 def bundled_wordlist() -> str:
     return str(resources.files("soul_toolkit").joinpath("data", "web-common.txt"))
 
@@ -435,10 +448,12 @@ class WebModule(Module):
                         f"Add to /etc/hosts: `{line}`", {"vhosts": found, "hosts_line": line})]
 
     def _paths_lead(self, ctx: Context, svc: Service, base: str, juicy: list[dict]) -> None:
-        # .git has its own (higher-ranked) lead; don't spend this one on it.
-        juicy = [h for h in juicy if not h["path"].startswith("/.git")]
+        # .git has its own (higher-ranked) lead; don't spend this one on it. Forbidden .ht* files
+        # are Apache's default deny rule on every server, not a discovery.
+        juicy = [h for h in juicy if not h["path"].startswith("/.git") and not _default_deny(h)]
         if not juicy:
             return
+        juicy = sorted(juicy, key=_path_priority)
         names = ", ".join(h["path"] for h in juicy[:4]) + (", ..." if len(juicy) > 4 else "")
         ctx.lead("web-paths", svc.port, f"Check the interesting paths: {names}",
                  f"Content discovery found {len(juicy)} path(s) with names that usually matter "
@@ -502,7 +517,8 @@ class WebModule(Module):
             ctx.log.ok(f"{svc.label} web: {len(hits)} path(s) found")
             findings.append(Finding(self.name, svc.port, f"Content discovery: {len(hits)} path(s)", "info",
                                     detail, {"paths": hits, "extensions": exts, "recursed": recursed}))
-            juicy = [h for h in hits if is_interesting(h["path"])]
+            juicy = sorted((h for h in hits if is_interesting(h["path"]) and not _default_deny(h)),
+                           key=_path_priority)
             if juicy:
                 findings.append(Finding(self.name, svc.port, "Interesting paths worth checking", "medium",
                                         ", ".join(h["path"] for h in juicy[:15]), {"paths": juicy}))
