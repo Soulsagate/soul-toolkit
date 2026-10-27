@@ -16,7 +16,7 @@ def _cell(text: str) -> str:
 
 
 def _fmt_duration(seconds: float) -> str:
-    m, s = divmod(int(round(seconds)), 60)
+    m, s = divmod(round(seconds), 60)
     return f"{m}m {s:02d}s" if m else f"{s}s"
 
 

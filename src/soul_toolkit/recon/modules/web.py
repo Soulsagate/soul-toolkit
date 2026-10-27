@@ -56,7 +56,7 @@ class HttpResponse:
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D401
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None  # surface 3xx as HTTPError so we can inspect Location
 
 
@@ -262,8 +262,9 @@ class WebModule(Module):
         if not res.ok and "non existing urls" in combined:
             m = _GB_WILDCARD_LEN.search(combined)
             if m:
-                ctx.log.warn(f"{svc.label} web: wildcard responses (length {m.group(1)}), retrying with --exclude-length")
-                res = ctx.run(cmd + ["--exclude-length", m.group(1)], timeout=ctx.options.brute_timeout)
+                ctx.log.warn(f"{svc.label} web: wildcard responses (length {m.group(1)}), "
+                             "retrying with --exclude-length")
+                res = ctx.run([*cmd, "--exclude-length", m.group(1)], timeout=ctx.options.brute_timeout)
 
         hits = parse_gobuster(res.stdout)
         if res.timed_out:

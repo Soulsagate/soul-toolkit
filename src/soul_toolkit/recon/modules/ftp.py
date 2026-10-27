@@ -92,7 +92,7 @@ class FtpModule(Module):
 
         if listing is not None:
             entries = parse_listing(listing)
-            shown = [e.raw for e in entries] or [l.strip() for l in listing if l.strip()]
+            shown = [e.raw for e in entries] or [ln.strip() for ln in listing if ln.strip()]
             n = len(entries)
             findings.append(Finding(self.name, svc.port, "Anonymous FTP login allowed", "high",
                                     f"{n} entr{'y' if n == 1 else 'ies'} in the FTP root",
@@ -111,10 +111,11 @@ class FtpModule(Module):
             writable = [e for e in entries if e.is_dir and e.world_writable]
             if writable:
                 findings.append(Finding(self.name, svc.port, "World-writable directories in FTP root", "medium",
-                                        ", ".join(e.name for e in writable) +
-                                        " - writable on disk; anonymous upload may still be disabled in the server config.",
+                                        ", ".join(e.name for e in writable) + " - writable on disk; anonymous "
+                                        "upload may still be disabled in the server config.",
                                         {"listing": [e.raw for e in writable]}))
-                ctx.hint("Check if anonymous upload works: cd into the writable dir in ftp and try `put` with a test file.")
+                ctx.hint("Check if anonymous upload works: cd into the writable dir in ftp "
+                         "and try `put` with a test file.")
         else:
             findings.append(Finding(self.name, svc.port, "Anonymous FTP login refused", "info", svc.banner))
 

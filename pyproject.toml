@@ -22,7 +22,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "ruff>=0.4"]
 
 [project.scripts]
 toolkit = "soul_toolkit.cli:main"
@@ -37,3 +37,12 @@ soul_toolkit = ["data/*.txt"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # reports use emoji and typographic dashes on purpose

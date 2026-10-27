@@ -13,8 +13,8 @@ reliable across nmap versions.
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable
 
 from soul_toolkit.core.models import Service
 from soul_toolkit.core.target import is_ipv6

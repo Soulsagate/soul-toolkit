@@ -57,7 +57,8 @@ class SmbModule(Module):
                 if not s["name"].endswith("$"):
                     ctx.hint(f"Try the '{s['name']}' share: smbclient //{ctx.target}/{s['name']} -N")
         else:
+            out = (res.stdout + res.stderr).strip()
             findings.append(Finding(self.name, svc.port, "Null-session share listing refused", "info",
-                                    (res.stdout + res.stderr).strip().splitlines()[-1] if (res.stdout + res.stderr).strip() else ""))
+                                    out.splitlines()[-1] if out else ""))
         ctx.hint(f"Deeper SMB enum: enum4linux-ng -A {ctx.target}")
         return findings

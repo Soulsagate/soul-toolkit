@@ -1,14 +1,14 @@
 import http.server
 import threading
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
 from soul_toolkit.core.log import Logger
 from soul_toolkit.core.models import HostResult, Service
-from soul_toolkit.recon.modules import Context, Options, select_modules
+from soul_toolkit.recon.modules import Context, Options, select_modules, smb, ssh, web
 from soul_toolkit.recon.modules import ftp as ftp_mod
-from soul_toolkit.recon.modules import smb, ssh, web
 
 
 def make_ctx(tmp_path: Path, target="127.0.0.1", **opts) -> Context:
@@ -104,13 +104,13 @@ def test_ftp_flags_backdoored_vsftpd(tmp_path, monkeypatch):
 
 
 class _Handler(http.server.BaseHTTPRequestHandler):
-    routes = {
+    routes: ClassVar[dict] = {
         "/": (200, "text/html", '<html><head><title>Hotel Login</title></head><body>hi</body></html>'),
         "/robots.txt": (200, "text/plain", "User-agent: *\nDisallow: /staff-only\n"),
         "/.git/HEAD": (200, "text/plain", "ref: refs/heads/master\n"),
     }
 
-    def do_GET(self):  # noqa: N802
+    def do_GET(self):
         status, ctype, body = self.routes.get(self.path, (404, "text/html", "nope"))
         data = body.encode()
         self.send_response(status)
@@ -125,7 +125,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
 
 
 class _RedirectHandler(_Handler):
-    def do_GET(self):  # noqa: N802
+    def do_GET(self):
         self.send_response(302)
         self.send_header("Location", "http://hotel.thm/")
         self.send_header("Content-Length", "0")
