@@ -40,10 +40,10 @@ which port happened to be scanned first - each with the command to run next. It'
 section of the report.
 
 ```
-[*] soul-toolkit v0.2.0 :: authorized targets only (see DISCLAIMER.md)
+[*] soul-toolkit v0.3.0 :: authorized targets only (see DISCLAIMER.md)
 [*] Target: 172.29.99.10
 [>] Stage 1/4: port sweep (all 65535 TCP ports)
-[+] Open ports: 21, 80, 111, 139, 445, 875, 2049, 8080, 20048, 42857
+[+] Open ports: 21, 80, 111, 139, 445, 875, 2049, 8080, 20048, 33763
 [>] Stage 2/4: service/version scan on 10 port(s)
 [*]   21/tcp     ftp            vsftpd 2.0.8 or later
 [*]   80/tcp     http           nginx 1.24.0 (Ubuntu)
@@ -54,7 +54,7 @@ section of the report.
 [*]   2049/tcp   nfs            3-4 (RPC #100003)
 [*]   8080/tcp   http           nginx 1.24.0 (Ubuntu)
 [*]   20048/tcp  mountd         1-3 (RPC #100005)
-[*]   42857/tcp  nlockmgr       4 (RPC #100021)
+[*]   33763/tcp  nlockmgr       4 (RPC #100021)
 [>] Stage 3/4: UDP scan (top 100 ports)
 [+] Open UDP ports: 111, 2049
 [*]   111/udp    rpcbind        2-4 (RPC #100000)
@@ -71,7 +71,7 @@ section of the report.
 [*] 80/tcp web: gobuster with /usr/share/seclists/Discovery/Web-Content/common.txt
 [!] 80/tcp web: wildcard responses under http://172.29.99.10 (length 154), retrying with --exclude-length
 [*] 8080/tcp web: gobuster with /usr/share/seclists/Discovery/Web-Content/common.txt, -x html,txt (static HTML (page links))
-[+] 445/tcp smb: 2 share(s) listed
+[+] 445/tcp smb: 2 share(s) listed, 1 readable
 [*] 80/tcp web: vhost fuzzing *.lab.thm with ffuf (/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt; filtering wildcard size 154)
 [+] 80/tcp web: 1 vhost(s) found: dev.lab.thm
 [+] 80/tcp web: add to /etc/hosts: 172.29.99.10 lab.thm dev.lab.thm
@@ -86,18 +86,19 @@ section of the report.
        $ git-dumper http://172.29.99.10:8080/.git/ ./8080-git
     3. Download everything from anonymous FTP (21/tcp)
        $ wget -m ftp://anonymous:anonymous@172.29.99.10/
-    4. Add the new vhost(s) to /etc/hosts and enumerate them: dev.lab.thm (80/tcp)
-       $ echo '172.29.99.10 lab.thm dev.lab.thm' | sudo tee -a /etc/hosts
-    5. Connect to the 'public' share with a null session (445/tcp)
+    4. Read the 'public' share with a null session (445/tcp)
        $ smbclient //172.29.99.10/public -N
+    5. Add the new vhost(s) to /etc/hosts and enumerate them: dev.lab.thm (80/tcp)
+       $ echo '172.29.99.10 lab.thm dev.lab.thm' | sudo tee -a /etc/hosts
 [+] Report: results/172.29.99.10/report.md  (HTML: report.html)
 [+] Writeup: results/172.29.99.10/writeup.md
 ```
 
 <sub>Per-module progress lines (`[*] [3/12] 445/tcp smb finished in 0:00`) are trimmed from this
 excerpt. searchsploit wasn't installed on the machine that made this run, so the `exploits`
-module skipped itself - which is exactly what a missing optional tool does. This run predates the
-closing `Saved in:` / `open the report:` lines that newer versions print (see [Output](#output)).</sub>
+module skipped itself - which is exactly what a missing optional tool does. The closing `Saved in:` /
+`open the report:` lines are trimmed too, since they show the folder on your own machine (see
+[Output](#output)).</sub>
 
 Each lead in the report also says *why* it matters, for example:
 
@@ -152,8 +153,8 @@ status: in-progress
 - [ ] **Mount the NFS export /srv/nfs (read-only)** (2049/tcp) - `sudo mkdir -p /mnt/nfs-srv-nfs && sudo mount -t nfs -o ro,nolock 172.29.99.10:/srv/nfs /mnt/nfs-srv-nfs`
 - [ ] **Dump the exposed .git repository** (8080/tcp) - `git-dumper http://172.29.99.10:8080/.git/ ./8080-git`
 - [ ] **Download everything from anonymous FTP** (21/tcp) - `wget -m ftp://anonymous:anonymous@172.29.99.10/`
+- [ ] **Read the 'public' share with a null session** (445/tcp) - `smbclient //172.29.99.10/public -N`
 - [ ] **Add the new vhost(s) to /etc/hosts and enumerate them: dev.lab.thm** (80/tcp) - `echo '172.29.99.10 lab.thm dev.lab.thm' | sudo tee -a /etc/hosts`
-- [ ] **Connect to the 'public' share with a null session** (445/tcp) - `smbclient //172.29.99.10/public -N`
 ```
 
 ## How it works
@@ -308,7 +309,7 @@ modules:
   -w, --wordlist FILE     gobuster wordlist (default: SecLists common.txt, else a small bundled list)
   -x, --extensions EXT    gobuster extensions, e.g. php,txt,html (default: picked from the fingerprint)
   --no-recurse            don't re-run gobuster inside found directories
-  -t, --threads N         gobuster threads (default 30)
+  -t, --threads N         gobuster/ffuf threads (default 30)
   --brute-timeout SEC     max seconds of content discovery per web port, recursion included (default 600)
 
 output:

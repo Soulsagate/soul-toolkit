@@ -10,6 +10,8 @@ All notable changes to this project. The format is based on
 
 The "easy to pick up" release: a redesigned HTML report, a step-by-step guide for new users,
 install commands that work on every major distro, and runs that tell you where your results are.
+"Where to start" is sharper too: SMB shares are checked for read access, and Exploit-DB and
+stock-Apache noise no longer crowds out real discoveries.
 
 ### Added
 
