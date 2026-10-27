@@ -1,0 +1,6 @@
+# The source distribution carries everything the test suite needs (fixtures, the Docker lab,
+# the release-notes script it tests) and the docs a user reads first. The wheel is code only.
+graft tests
+graft scripts
+include CHANGELOG.md DISCLAIMER.md CONTRIBUTING.md
+global-exclude __pycache__ *.py[cod]

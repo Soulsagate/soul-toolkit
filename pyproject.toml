@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "soul-toolkit"
 version = "0.3.1"
-description = "A modular pentest toolkit for authorized labs and CTFs. Flagship command: staged, service-aware recon."
+description = "Recon for authorized labs and CTFs: staged nmap plus per-service checks, ending in a ranked 'Where to start' list."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -25,6 +25,12 @@ classifiers = [
     "Intended Audience :: Information Technology",
 ]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Soulsagate/soul-toolkit"
+Documentation = "https://github.com/Soulsagate/soul-toolkit/blob/main/docs/getting-started.md"
+Changelog = "https://github.com/Soulsagate/soul-toolkit/blob/main/CHANGELOG.md"
+Issues = "https://github.com/Soulsagate/soul-toolkit/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.4"]
