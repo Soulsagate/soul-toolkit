@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import shlex
 import signal
+import sys
 import threading
 import time
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
@@ -393,4 +395,35 @@ def _finish(cfg: ReconConfig, result: HostResult, outdir: Path, t0: float, log: 
     if cfg.writeup:
         log.ok(f"Writeup: {write_writeup(result, outdir, cfg.room)}")
     log.debug(f"JSON:   {js}")
+    log.ok(f"Saved in: {display_path(outdir)}/")
+    log.line(f"    open the report: {open_command(md.with_suffix('.html'))}")
     return result
+
+
+_SHELL_SAFE = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-./~+@%:,")
+
+
+def _home() -> Path:
+    from soul_toolkit.recon.settings import user_home  # the sudo user's home, not /root
+
+    return user_home()
+
+
+def display_path(path: Path) -> str:
+    """Absolute path with the user's home shown as '~', so people can find their results."""
+    p = path.resolve()
+    home = _home().resolve()
+    try:
+        rel = p.relative_to(home)
+    except ValueError:
+        return str(p)
+    return "~" if str(rel) == "." else f"~/{rel}"
+
+
+def open_command(path: Path) -> str:
+    """A copy-pasteable command that opens *path* with the desktop's default app."""
+    opener = "open" if sys.platform == "darwin" else "xdg-open"
+    shown = display_path(path)
+    if all(c in _SHELL_SAFE for c in shown):
+        return f"{opener} {shown}"  # '~' unquoted so the shell expands it
+    return f"{opener} {shlex.quote(str(path.resolve()))}"

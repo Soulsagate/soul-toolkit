@@ -6,6 +6,13 @@ All notable changes to this project. The format is based on
 
 ## Unreleased
 
+### Added
+
+- Every run now ends by printing the full folder its results were saved in (home shown as `~`,
+  the sudo user's home under `sudo`) and a copy-paste `xdg-open` / `open` command for the HTML
+  report. The README's Output section explains where results go, how to open them, and how to
+  keep them in one place with `-o` or the config file.
+
 ## 0.2.0 - 2026-10-27
 
 The "what do I try next" release: recon now ends with a ranked list of leads, writes reports you

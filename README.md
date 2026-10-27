@@ -92,7 +92,8 @@ section of the report.
 
 <sub>Per-module progress lines (`[*] [3/12] 445/tcp smb finished in 0:00`) are trimmed from this
 excerpt. searchsploit wasn't installed on the machine that made this run, so the `exploits`
-module skipped itself - which is exactly what a missing optional tool does.</sub>
+module skipped itself - which is exactly what a missing optional tool does. This run predates the
+closing `Saved in:` / `open the report:` lines that newer versions print (see [Output](#output)).</sub>
 
 Each lead in the report also says *why* it matters, for example:
 
@@ -102,7 +103,8 @@ Each lead in the report also says *why* it matters, for example:
 
 ### 2. Reports you can read, share and keep
 
-`results/<target>/` gets:
+`results/<target>/` (created in the folder you run it from - see [Output](#output) to find,
+open or relocate it) gets:
 
 - **`report.md`** - Where to start, open ports, findings by severity, nmap script output, every
   command that was run. Full sample: **[docs/sample-report.md](docs/sample-report.md)**
@@ -349,6 +351,36 @@ toolkit recon 10.10.42.17 -p 80 -m web \
 ```
 
 ### Output
+
+**Where it goes:** every run creates `results/<target>/` **in the folder you run `toolkit` from**
+(so running it from `~` gives `~/results/<target>/`). The folders are created for you, and under
+`sudo` they still belong to you, not root. The last lines of every run tell you exactly where
+the files are and how to open the report:
+
+```
+[+] Saved in: ~/results/10.10.42.17/
+    open the report: xdg-open ~/results/10.10.42.17/report.html
+```
+
+To keep every scan in one place no matter where you run it, use `-o DIR` or set it once in the
+[config file](#config-file):
+
+```bash
+mkdir -p ~/.config/soul-toolkit && printf '[recon]\noutput = ~/ctf/results\n' > ~/.config/soul-toolkit/config.ini
+toolkit config | grep output   # check it's picked up
+```
+
+**Opening the files:** `report.html` is the nicest to read (any browser). `report.md` and
+`writeup.md` open in any Markdown app - in Obsidian, open the results folder as a vault or copy
+`writeup.md` into yours.
+
+```bash
+xdg-open ~/results/10.10.42.17/report.html   # browser (macOS: open ...)
+xdg-open ~/results/10.10.42.17/writeup.md    # default Markdown app
+xdg-open ~/results/10.10.42.17/              # file manager
+```
+
+What's inside:
 
 ```
 results/<target>/

@@ -33,3 +33,40 @@ def test_hand_back_chowns_tree(tmp_path):
     for p in (base, tree, tree / "report.md"):
         assert p.stat().st_uid == 65534
     assert tmp_path.stat().st_uid != 65534  # never climbs above the output dir
+
+
+# ----------------------------------------------------------------- where results are saved
+
+
+def test_display_path_uses_tilde_for_home(tmp_path, monkeypatch):
+    monkeypatch.setattr(engine, "_home", lambda: tmp_path)
+    assert engine.display_path(tmp_path / "results" / "10.10.10.10") == "~/results/10.10.10.10"
+    assert engine.display_path(tmp_path) == "~"
+
+
+def test_display_path_outside_home_is_absolute(tmp_path, monkeypatch):
+    monkeypatch.setattr(engine, "_home", lambda: tmp_path / "somebody")
+    out = tmp_path / "scans" / "box"
+    assert engine.display_path(out) == str(out.resolve())
+
+
+def test_display_path_resolves_relative(tmp_path, monkeypatch):
+    monkeypatch.setattr(engine, "_home", lambda: tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert engine.display_path(engine.Path("results/box")) == "~/results/box"
+
+
+def test_open_command(tmp_path, monkeypatch):
+    monkeypatch.setattr(engine, "_home", lambda: tmp_path)
+    monkeypatch.setattr(engine.sys, "platform", "linux")
+    assert engine.open_command(tmp_path / "results" / "box" / "report.html") == \
+        "xdg-open ~/results/box/report.html"
+    monkeypatch.setattr(engine.sys, "platform", "darwin")
+    assert engine.open_command(tmp_path / "r.html").startswith("open ~/")
+
+
+def test_open_command_quotes_unsafe_paths(tmp_path, monkeypatch):
+    monkeypatch.setattr(engine, "_home", lambda: tmp_path)
+    monkeypatch.setattr(engine.sys, "platform", "linux")
+    cmd = engine.open_command(tmp_path / "my scans" / "report.html")
+    assert cmd == f"xdg-open '{(tmp_path / 'my scans' / 'report.html').resolve()}'"
