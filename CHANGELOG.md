@@ -6,7 +6,17 @@ All notable changes to this project. The format is based on
 
 ## Unreleased
 
+## 0.3.0 - 2026-10-27
+
+The "easy to pick up" release: a redesigned HTML report, a step-by-step guide for new users,
+install commands that work on every major distro, and runs that tell you where your results are.
+
 ### Added
+
+- **[Getting started guide](docs/getting-started.md)**: from a fresh machine to the first report,
+  with per-distro install commands (Arch, Kali, Debian/Ubuntu/Mint/LMDE, WSL2), the VPN and the
+  first scan, reading the results, everyday commands, updating, and troubleshooting for the
+  errors new users actually hit. Linked from the top of the README.
 
 - Every run now ends by printing the full folder its results were saved in (home shown as `~`,
   the sudo user's home under `sudo`) and a copy-paste `xdg-open` / `open` command for the HTML

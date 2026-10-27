@@ -22,6 +22,10 @@ toolkit doctor                           # what's installed, how to get the rest
 sudo "$(which toolkit)" recon 10.10.42.17
 ```
 
+**New to this?** The step-by-step **[Getting started guide](docs/getting-started.md)** walks you
+from a fresh machine to your first report: install commands for your distro, connecting the VPN,
+reading the results, and fixes for the common errors.
+
 ## What you get
 
 Everything below is real output from one run against the deliberately vulnerable lab in
@@ -194,6 +198,9 @@ you have. Want another service? [docs/writing-a-module.md](docs/writing-a-module
 adding one.
 
 ## Install
+
+> First time? Follow the [Getting started guide](docs/getting-started.md) instead - it covers the
+> same steps one at a time, per distro, plus [troubleshooting](docs/getting-started.md#7-troubleshooting).
 
 Requires **Python 3.9+** and **nmap**. Runs on any modern Linux: Kali, the TryHackMe AttackBox,
 Arch/EndeavourOS, Debian, Ubuntu, Linux Mint / LMDE. **WSL2** works too, as long as your VPN
