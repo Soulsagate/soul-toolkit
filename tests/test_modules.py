@@ -22,6 +22,7 @@ GOBUSTER_OUT = (
     "\r\x1b[2K/admin                (Status: 301) [Size: 314] [--> http://10.10.10.10/admin/]\n"
     "/index.php            (Status: 200) [Size: 10918]\n"
     "/.htpasswd            (Status: 403) [Size: 277]\n"
+    "/index.php            (Status: 200) [Size: 10918]\n"
     "Progress: 4614 / 4615 (99.98%)\n"
     "garbage line\n"
 )

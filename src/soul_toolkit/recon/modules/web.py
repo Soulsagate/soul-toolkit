@@ -215,7 +215,10 @@ def recurse_candidates(hits: list[dict], limit: int = MAX_RECURSE_DIRS) -> list[
 
 
 def parse_gobuster(output: str) -> list[dict]:
+    """Parse gobuster dir output. A path is kept once even if gobuster prints it twice
+    (wordlist has `index` and `index.html` while `-x html` is set)."""
     results = []
+    seen: set[str] = set()
     for raw in output.splitlines():
         line = _ANSI.sub("", raw).replace("\r", "").strip()
         m = _GB_LINE.match(line)
@@ -224,6 +227,9 @@ def parse_gobuster(output: str) -> list[dict]:
         path = m.group("path")
         if not path.startswith("/"):
             path = "/" + path
+        if path in seen:
+            continue
+        seen.add(path)
         results.append(
             {
                 "path": path,
