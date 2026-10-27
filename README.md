@@ -130,6 +130,7 @@ scanning:
   --ping                  do host discovery (default is -Pn; lab boxes often drop ping)
   --no-scripts            skip nmap default scripts (-sC)
   --udp / --no-udp        force / skip the top-100 UDP scan (default: on as root unless -p is given)
+  --resume                reuse finished nmap results from an earlier run in the output dir
 
 modules:
   -m, --modules LIST      only run these modules (e.g. web,ftp)
@@ -177,6 +178,9 @@ toolkit recon cheese.thm -p 80 -x php,txt,html
 
 # Start your writeup while you scan: writeup.md lands next to the report
 toolkit recon cheese.thm --room "Cheese CTF"
+
+# Re-run modules (new wordlist, after an interrupt...) without waiting for nmap again
+toolkit recon 10.10.42.17 --resume -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt
 
 # Bigger wordlist for the web module only
 toolkit recon 10.10.42.17 -p 80 -m web \

@@ -37,6 +37,7 @@ class ReconConfig:
     writeup: bool = False
     room: str | None = None
     jobs: int = 4  # module runs in parallel
+    resume: bool = False  # reuse finished nmap XML in the output dir instead of rescanning
 
     def __post_init__(self) -> None:
         if self.options is None:
@@ -115,6 +116,34 @@ def want_udp(cfg: ReconConfig, log: Logger) -> bool:
     return bool(cfg.udp) or not cfg.ports
 
 
+def reuse_xml(cfg: ReconConfig, path: Path, result: HostResult, log: Logger,
+              ports: list[int] | None = None) -> list[nmap.NmapHost] | None:
+    """With --resume, the hosts from an earlier run's XML - if it finished, is for this target and
+    (for service scans) covered *ports*. None means "scan again" (the reason is logged)."""
+    if not cfg.resume or not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        info = nmap.scan_info(text)
+        hosts = nmap.parse_xml(text)
+    except nmap.NmapError:
+        log.warn(f"--resume: {path.name} is unreadable - scanning again")
+        return None
+    problem = ""
+    if not info.complete:
+        problem = "that scan didn't finish"
+    elif info.target != cfg.target:
+        problem = f"it is for {info.target or 'another target'}"
+    elif ports is not None and info.ports is not None and not set(ports) <= set(info.ports):
+        problem = "it covered different ports"
+    if problem:
+        log.warn(f"--resume: not reusing {path.name} ({problem}) - scanning again")
+        return None
+    log.info(f"--resume: reusing {path.name}")
+    result.commands.append(f"# reused {path.name} from an earlier run (--resume)")
+    return hosts
+
+
 def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path, result: HostResult) -> None:
     syn = is_root()
     if not syn:
@@ -125,15 +154,25 @@ def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path, result: HostResult)
     # Whatever is still listed here when Ctrl-C lands goes into the partial report.
     result.incomplete = ["TCP port sweep", "TCP service scan", *(["UDP scan"] if udp else []), "service modules"]
 
+    # A finished service scan from an earlier run makes the sweep unnecessary too.
+    services_xml = outdir / "nmap-services.xml"
+    reused = reuse_xml(cfg, services_xml, result, log, cfg.ports)
+
     # ---- TCP port sweep -----------------------------------------------------
     if cfg.ports:
         ports = cfg.ports
         log.step(f"Stage {next(stage)}/{total}: skipped, using {len(ports)} given port(s)")
+    elif reused is not None:
+        ports = reused[0].open_ports if reused else []
+        log.step(f"Stage {next(stage)}/{total}: port sweep skipped (--resume)")
     else:
         scope = "all 65535 TCP ports" if cfg.full else "top 1000 TCP ports"
         log.step(f"Stage {next(stage)}/{total}: port sweep ({scope})")
-        cmd = nmap.build_port_sweep(cfg.target, syn=syn, full=cfg.full, min_rate=cfg.min_rate, skip_ping=cfg.skip_ping)
-        sweep = _run_nmap(cmd, outdir / "nmap-ports.xml", result, log, "port sweep")
+        sweep = reuse_xml(cfg, outdir / "nmap-ports.xml", result, log)
+        if sweep is None:
+            cmd = nmap.build_port_sweep(cfg.target, syn=syn, full=cfg.full, min_rate=cfg.min_rate,
+                                        skip_ping=cfg.skip_ping)
+            sweep = _run_nmap(cmd, outdir / "nmap-ports.xml", result, log, "port sweep")
         host = sweep[0] if sweep else None
         ports = host.open_ports if host else []
         if host:
@@ -146,14 +185,19 @@ def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path, result: HostResult)
 
     # ---- TCP service scan ---------------------------------------------------
     if ports:
-        log.step(f"Stage {next(stage)}/{total}: service/version scan on {len(ports)} port(s)")
-        cmd = nmap.build_service_scan(cfg.target, ports, syn=syn, scripts=cfg.scripts, skip_ping=cfg.skip_ping)
-        hosts = _run_nmap(cmd, outdir / "nmap-services.xml", result, log, "service scan")
+        what = "reused from an earlier run (--resume)" if reused is not None else f"on {len(ports)} port(s)"
+        log.step(f"Stage {next(stage)}/{total}: service/version scan {what}")
+        hosts = reused
+        if hosts is None:
+            cmd = nmap.build_service_scan(cfg.target, ports, syn=syn, scripts=cfg.scripts, skip_ping=cfg.skip_ping)
+            hosts = _run_nmap(cmd, services_xml, result, log, "service scan")
         if hosts:
             h = hosts[0]
             result.address, result.hostnames, result.os_guess = h.address, h.hostnames, h.os_guess
             result.status = h.status
             result.services = h.services
+            if reused is not None and cfg.ports:  # an earlier scan may have covered more ports than asked
+                result.services = [s for s in h.services if s.port in cfg.ports]
         for s in result.services:
             log.info(f"  {s.label:<10} {s.name:<14} {s.banner}")
     else:
@@ -266,16 +310,21 @@ def _run_modules(cfg: ReconConfig, log: Logger, outdir: Path, result: HostResult
 def _udp_stage(cfg: ReconConfig, result: HostResult, outdir: Path, log: Logger) -> None:
     """Top-100 UDP sweep, then -sV/-sC on whatever answered. A UDP failure never ends the run."""
     try:
-        cmd = nmap.build_udp_sweep(cfg.target, min_rate=cfg.min_rate, skip_ping=cfg.skip_ping)
-        sweep = _run_nmap(cmd, outdir / "nmap-udp.xml", result, log, "UDP sweep")
+        hosts = reuse_xml(cfg, outdir / "nmap-udp-services.xml", result, log)
+        if hosts is None:
+            sweep = reuse_xml(cfg, outdir / "nmap-udp.xml", result, log)
+            if sweep is None:
+                cmd = nmap.build_udp_sweep(cfg.target, min_rate=cfg.min_rate, skip_ping=cfg.skip_ping)
+                sweep = _run_nmap(cmd, outdir / "nmap-udp.xml", result, log, "UDP sweep")
+            result.udp_scanned = True
+            ports = sweep[0].open_ports if sweep else []
+            if not ports:
+                log.info("  no UDP ports answered (open|filtered ports aren't reported)")
+                return
+            log.ok(f"Open UDP ports: {', '.join(map(str, ports))}")
+            cmd = nmap.build_udp_service_scan(cfg.target, ports, scripts=cfg.scripts, skip_ping=cfg.skip_ping)
+            hosts = _run_nmap(cmd, outdir / "nmap-udp-services.xml", result, log, "UDP service scan")
         result.udp_scanned = True
-        ports = sweep[0].open_ports if sweep else []
-        if not ports:
-            log.info("  no UDP ports answered (open|filtered ports aren't reported)")
-            return
-        log.ok(f"Open UDP ports: {', '.join(map(str, ports))}")
-        cmd = nmap.build_udp_service_scan(cfg.target, ports, scripts=cfg.scripts, skip_ping=cfg.skip_ping)
-        hosts = _run_nmap(cmd, outdir / "nmap-udp-services.xml", result, log, "UDP service scan")
     except nmap.NmapError as exc:
         log.warn(f"UDP scan failed, continuing with TCP results: {exc}")
         return

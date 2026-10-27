@@ -48,6 +48,8 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
                       help="do host discovery (default is -Pn, since lab boxes often drop ping)")
     scan.add_argument("--no-scripts", dest="scripts", action="store_false", default=None,
                       help="skip nmap default scripts (-sC)")
+    scan.add_argument("--resume", action="store_true",
+                      help="reuse finished nmap results (XML) from an earlier run in the output dir")
     udp = scan.add_mutually_exclusive_group()
     udp.add_argument("--udp", dest="udp", action="store_true", default=None,
                      help="scan the top 100 UDP ports (needs root; on by default as root unless -p is given)")
@@ -130,6 +132,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
         writeup=args.writeup or bool(args.room),
         room=args.room,
         jobs=max(1, s["jobs"]),
+        resume=args.resume,
         options=Options(
             brute=s["brute"],
             wordlist=s["wordlist"],

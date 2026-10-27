@@ -145,6 +145,39 @@ def script_fields(output: str) -> dict[str, str]:
     return fields
 
 
+@dataclass
+class ScanInfo:
+    """What an existing nmap XML file says about the scan that produced it."""
+
+    args: list[str]
+    complete: bool  # <finished exit="success">
+
+    @property
+    def target(self) -> str:
+        return self.args[-1] if self.args else ""
+
+    @property
+    def ports(self) -> list[int] | None:
+        """The explicit -p list, or None for sweeps (-p- / --top-ports)."""
+        if "-p" in self.args and self.args.index("-p") + 1 < len(self.args):
+            spec = self.args[self.args.index("-p") + 1]
+            try:
+                return parse_ports(spec)
+            except ValueError:
+                return None
+        return None
+
+
+def scan_info(xml_text: str) -> ScanInfo:
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError as exc:
+        raise NmapError(f"could not parse nmap XML: {exc}") from exc
+    finished = root.find("runstats/finished")
+    return ScanInfo(args=(root.get("args") or "").split(),
+                    complete=finished is not None and finished.get("exit") == "success")
+
+
 def parse_xml(xml_text: str) -> list[NmapHost]:
     """Parse nmap -oX output. Only ports in state 'open' are kept."""
     if not xml_text or not xml_text.strip():
