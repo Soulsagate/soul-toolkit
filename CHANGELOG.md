@@ -6,6 +6,22 @@ All notable changes to this project. The format is based on
 
 ## Unreleased
 
+## 0.3.2 - 2026-10-27
+
+### Added
+
+- **On PyPI.** Releases are now published to PyPI as well, so from this version
+  `pipx install soul-toolkit` works. The `git+https://...` install keeps working. Publishing uses
+  PyPI's trusted publishing from the release workflow, so no upload token is stored anywhere.
+- **Demo GIF** at the top of the README: a real run against the bundled lab, with the long waits
+  sped up.
+
+### Changed
+
+- README links and images are absolute, so they also work on the PyPI project page.
+- The source distribution now includes the test fixtures, the Docker lab and `scripts/`, so its
+  test suite runs on its own.
+
 ## 0.3.1 - 2026-10-27
 
 Fixes from the first run by someone other than the author: a fresh Linux Mint Debian Edition 6
