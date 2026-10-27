@@ -14,7 +14,11 @@ def run(monkeypatch, present, plat="debian", show_all=False, wordlists=False):
 
 
 def test_detect_platform():
-    assert doctor.detect_platform('ID=kali\nID_LIKE=debian\n', "Linux") == "debian"
+    assert doctor.detect_platform('ID=kali\nID_LIKE=debian\n', "Linux") == "kali"
+    assert doctor.detect_platform('ID=parrot\nID_LIKE=debian\n', "Linux") == "kali"
+    # LMDE 6 / Linux Mint: ID=linuxmint, ID_LIKE=debian (LMDE) or ubuntu (Mint)
+    assert doctor.detect_platform('ID=linuxmint\nID_LIKE=debian\n', "Linux") == "debian"
+    assert doctor.detect_platform('ID=debian\n', "Linux") == "debian"
     assert doctor.detect_platform('ID="endeavouros"\nID_LIKE="arch"\n', "Linux") == "arch"
     assert doctor.detect_platform("ID=ubuntu\nID_LIKE=debian\n", "Linux") == "debian"
     assert doctor.detect_platform("ID=fedora\n", "Linux") is None
@@ -40,17 +44,35 @@ def test_all_present(monkeypatch):
     assert rc == 0 and "Everything is installed." in out and "[--  ]" not in out
 
 
-def test_missing_optional_tools(monkeypatch):
-    rc, out = run(monkeypatch, {"nmap", "gobuster"})
+def test_missing_optional_tools_kali(monkeypatch):
+    rc, out = run(monkeypatch, {"nmap", "gobuster"}, plat="kali")
     assert rc == 0
     assert "[--  ] searchsploit" in out and "exploits: Exploit-DB lookups" in out
-    debian = out[out.index("Kali / Debian / Ubuntu (this machine):"):]
-    assert "sudo apt install ffuf exploitdb smbclient nfs-common snmp onesixtyone seclists" in debian
-    assert "Kali packages" in debian
+    kali = out[out.index("Kali / Parrot (this machine):"):out.index("Arch /")]
+    assert "sudo apt install ffuf exploitdb smbclient nfs-common snmp onesixtyone seclists" in kali
+    assert "gitlab.com" not in kali
     assert "yay -S exploitdb onesixtyone seclists" in out
     assert "brew install ffuf exploitdb samba net-snmp" in out and "SecLists.git" in out and "toolkit config" in out
     # detected platform first
-    assert out.index("Kali / Debian / Ubuntu") < out.index("Arch /") < out.index("macOS:")
+    assert out.index("Kali / Parrot") < out.index("Arch /") < out.index("macOS:")
+
+
+def test_plain_debian_never_apt_installs_kali_only_packages(monkeypatch):
+    # apt refuses the whole command if one package doesn't exist, so these must not be in it.
+    _, out = run(monkeypatch, {"nmap", "gobuster"}, plat="debian")
+    deb = out[out.index("Debian / Ubuntu / Mint / LMDE (this machine):"):out.index("Kali / Parrot")]
+    apt = next(line for line in deb.splitlines() if "apt install" in line)
+    assert "exploitdb" not in apt.split() and "seclists" not in apt.split()
+    assert "sudo apt install ffuf smbclient nfs-common snmp onesixtyone" in apt
+    assert "gitlab.com/exploit-database/exploitdb.git /opt/exploitdb" in deb
+    assert "ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit" in deb
+    assert "SecLists.git /usr/share/seclists" in deb
+
+
+def test_plain_debian_with_only_kali_packages_missing(monkeypatch):
+    _, out = run(monkeypatch, ALL - {"searchsploit"}, plat="debian", wordlists=True)
+    deb = out[out.index("Debian / Ubuntu / Mint / LMDE (this machine):"):out.index("Kali / Parrot")]
+    assert "apt install" not in deb and "/opt/exploitdb" in deb
 
 
 def test_missing_nmap_fails(monkeypatch):

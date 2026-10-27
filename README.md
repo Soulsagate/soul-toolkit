@@ -187,8 +187,10 @@ adding one.
 
 ## Install
 
-Requires **Python 3.9+** and **nmap**. Built for Linux (Kali, the TryHackMe AttackBox, Arch);
-macOS should work but isn't tested. No Python dependencies beyond the standard library.
+Requires **Python 3.9+** and **nmap**. Runs on any modern Linux: Kali, the TryHackMe AttackBox,
+Arch/EndeavourOS, Debian, Ubuntu, Linux Mint / LMDE. **WSL2** works too, as long as your VPN
+(e.g. OpenVPN for TryHackMe) runs *inside* WSL, not on the Windows side; WSL1 doesn't. macOS
+should work but isn't tested. No Python dependencies beyond the standard library.
 
 ### 1. The toolkit
 
@@ -233,8 +235,19 @@ optional tool means that check is skipped with a warning and an install hint, ne
 | `searchsploit` | `exploits` lookups | `yay -S exploitdb` | `sudo apt install exploitdb` |
 | SecLists | better wordlists (optional) | `yay -S seclists` | `sudo apt install seclists` |
 
+**Debian / Ubuntu / Mint / LMDE:** everything above is in the normal repos *except* `exploitdb` and
+`seclists`, which are Kali-only - don't put them in an `apt install` line, or apt refuses the whole
+command. Install those two from source instead (`toolkit doctor` prints exactly this for you):
+
+```bash
+sudo apt install nmap gobuster ffuf smbclient nfs-common snmp onesixtyone
+sudo git clone --depth 1 https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb
+sudo ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit
+sudo git clone --depth 1 https://github.com/danielmiessler/SecLists.git /usr/share/seclists
+```
+
 `toolkit doctor` checks all of them, says what each one enables, and prints the exact install
-commands for what's missing - for Arch, Debian/Kali and macOS, your platform first:
+commands for what's missing - for Arch, Kali, Debian/Ubuntu and macOS, your platform first:
 
 ```bash
 toolkit doctor          # what's installed, what's missing

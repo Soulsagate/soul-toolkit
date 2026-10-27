@@ -13,6 +13,15 @@ All notable changes to this project. The format is based on
   report. The README's Output section explains where results go, how to open them, and how to
   keep them in one place with `-o` or the config file.
 
+### Fixed
+
+- `toolkit doctor` on plain Debian, Ubuntu, Linux Mint and LMDE printed one `apt install` line that
+  included the Kali-only `exploitdb` and `seclists` packages, so apt refused to install anything.
+  Kali/Parrot and Debian/Ubuntu/Mint are now detected separately; on the latter those two are
+  installed from their upstream repos (`/opt/exploitdb` + a `searchsploit` symlink,
+  `/usr/share/seclists`), which is where recon already looks.
+- Checked against gobuster 3.5 (Debian 12 / LMDE 6's version) as well as 3.6 and 3.8.
+
 ## 0.2.0 - 2026-10-27
 
 The "what do I try next" release: recon now ends with a ranked list of leads, writes reports you

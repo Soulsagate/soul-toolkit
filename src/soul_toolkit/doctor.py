@@ -43,10 +43,29 @@ TOOLS: tuple[Tool, ...] = (
          ("aur", "onesixtyone"), ("apt", "onesixtyone"), ("none", "not needed - snmpwalk covers it")),
 )
 
-PLATFORMS = {"arch": "Arch / EndeavourOS / Manjaro", "debian": "Kali / Debian / Ubuntu", "macos": "macOS"}
+PLATFORMS = {
+    "arch": "Arch / EndeavourOS / Manjaro",
+    "kali": "Kali / Parrot",
+    "debian": "Debian / Ubuntu / Mint / LMDE",
+    "macos": "macOS",
+}
 KALI_ONLY = {"exploitdb", "seclists"}  # in Kali's repos, not Debian's or Ubuntu's
-SECLISTS = {"arch": ("aur", "seclists"), "debian": ("apt", "seclists"), "macos": ("none", "")}
+SECLISTS = {"arch": ("aur", "seclists"), "kali": ("apt", "seclists"), "debian": ("apt", "seclists"),
+            "macos": ("none", "")}
 SECLISTS_CLONE = "git clone --depth 1 https://github.com/danielmiessler/SecLists.git"
+# Plain Debian/Ubuntu: one missing package makes `apt install` refuse everything, so the Kali-only
+# packages are installed from their upstream repos instead, into the paths recon looks in.
+FROM_SOURCE = {
+    "exploitdb": [
+        "sudo git clone --depth 1 https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb",
+        "sudo ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit",
+    ],
+    "seclists": [f"sudo {SECLISTS_CLONE} /usr/share/seclists"],
+}
+
+
+def _pkg(tool: Tool, plat: str) -> Pkg:
+    return tool.debian if plat == "kali" else getattr(tool, plat)
 
 
 def detect_platform(os_release: str | None = None, system: str | None = None) -> str | None:
@@ -66,7 +85,9 @@ def detect_platform(os_release: str | None = None, system: str | None = None) ->
             ids += value.strip().strip('"').lower().split()
     if any(i in ("arch", "manjaro", "endeavouros", "garuda", "blackarch") for i in ids):
         return "arch"
-    if any(i in ("debian", "ubuntu", "kali", "parrot") for i in ids):
+    if any(i in ("kali", "parrot") for i in ids):
+        return "kali"
+    if any(i in ("debian", "ubuntu", "linuxmint", "pop", "elementary", "zorin") for i in ids):
         return "debian"
     return None
 
@@ -148,14 +169,20 @@ def run_doctor(show_all: bool = False, out=None) -> int:
         order = [plat] if plat and not show_all else []
         order += [p for p in PLATFORMS if p not in order]
         for p in order:
-            pkgs = [getattr(t, p) for t in todo]
+            pkgs = [_pkg(t, p) for t in todo]
             if need_seclists:
                 pkgs.append(SECLISTS[p])
+            from_source: list[str] = []
+            if p == "debian":
+                from_source = [name for _, name in pkgs if name in KALI_ONLY]
+                pkgs = [(m, n) for m, n in pkgs if n not in KALI_ONLY]
             cmds = install_commands(pkgs)
             if p == "macos" and need_seclists:
                 cmds.append(f"{SECLISTS_CLONE}  # then set wordlist / vhost_wordlist in `toolkit config`")
-            if p == "debian" and any(name in KALI_ONLY for _, name in pkgs):
-                cmds.append("# exploitdb and seclists are Kali packages; on Debian/Ubuntu install them from GitHub")
+            if from_source:
+                cmds.append(f"# {' and '.join(from_source)}: not in Debian/Ubuntu repos, install from source")
+                for name in from_source:
+                    cmds += FROM_SOURCE[name]
             label = PLATFORMS[p] + (" (this machine)" if p == plat else "")
             say(f"  {label}:")
             for c in cmds or ["# nothing to install"]:
