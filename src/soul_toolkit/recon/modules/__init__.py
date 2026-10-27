@@ -77,6 +77,7 @@ def all_modules() -> list[Module]:
     from soul_toolkit.recon.modules.mysql import MysqlModule
     from soul_toolkit.recon.modules.nfs import NfsModule
     from soul_toolkit.recon.modules.postgres import PostgresModule
+    from soul_toolkit.recon.modules.redis import RedisModule
     from soul_toolkit.recon.modules.smb import SmbModule
     from soul_toolkit.recon.modules.smtp import SmtpModule
     from soul_toolkit.recon.modules.snmp import SnmpModule
@@ -85,7 +86,7 @@ def all_modules() -> list[Module]:
 
     return [
         WebModule(), FtpModule(), SshModule(), SmbModule(), NfsModule(), SmtpModule(), SnmpModule(), MysqlModule(),
-        PostgresModule(),
+        PostgresModule(), RedisModule(),
         ExploitsModule(),  # last: it reads every service, so its leads land after the specific ones
     ]
 

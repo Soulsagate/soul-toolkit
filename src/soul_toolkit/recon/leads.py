@@ -20,6 +20,7 @@ SCORES: dict[str, int] = {
     "mysql-empty": 92,           # database root with no password
     "postgres-trust": 92,        # PostgreSQL superuser with no password (trust)
     "web-git": 90,               # source code + history
+    "redis-unauth": 90,          # Redis answering without a password
     "ftp-webroot": 88,           # anonymous FTP that looks like the web root
     "nfs-world": 90,             # NFS export anyone can mount
     "ftp-anon": 85,              # anonymous FTP with files
