@@ -39,3 +39,25 @@ jobs:
           done
       - run: pip install -e '.[dev]'
       - run: pytest -q
+        env:
+          SOUL_SKIP_LAB: "1"   # the lab job below runs it once instead of five times
+
+  lab:
+    # Builds the vulnerable lab in tests/lab/ and runs a real recon against it.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install the tools recon wraps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nmap gobuster ffuf smbclient nfs-common
+      - run: pip install -e '.[dev]'
+      - run: pytest -q -rs tests/test_lab.py
+        env:
+          SOUL_REQUIRE_LAB: "1"  # fail, don't skip, if Docker or a tool is missing
+      - name: Lab logs on failure
+        if: failure()
+        run: docker compose -f tests/lab/docker-compose.yml logs --tail 50 || true

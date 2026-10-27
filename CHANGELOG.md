@@ -39,6 +39,9 @@ can use straight away, and covers a lot more services.
   partial report** instead of losing the run.
 - **`--resume`**: reuse finished nmap results from an earlier run.
 - Install with **pipx**: `pipx install git+https://github.com/Soulsagate/soul-toolkit`.
+- **`tests/lab/`**: a deliberately vulnerable Docker lab (anonymous FTP, a web app with an exposed
+  `.git` and a hidden vhost, null-session SMB, a world-readable NFS export) and an integration test
+  that runs recon against it.
 - GitHub Actions CI (ruff + pytest on Python 3.9-3.13), `docs/writing-a-module.md`,
   `CONTRIBUTING.md`, this changelog.
 

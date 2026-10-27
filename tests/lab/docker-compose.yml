@@ -1,0 +1,47 @@
+# A deliberately vulnerable "CTF box" for testing soul-toolkit on your own machine.
+#
+#   docker compose -f tests/lab/docker-compose.yml up -d --build
+#   toolkit recon 172.29.99.10
+#   docker compose -f tests/lab/docker-compose.yml down
+#
+# Every service shares the network namespace of `box`, so they all answer on one IP, like a
+# real box. Nothing is published on the host's ports: the lab is only reachable from this machine.
+name: soul-lab
+
+services:
+  box:
+    image: ubuntu:24.04
+    command: sleep infinity
+    init: true
+    hostname: lab
+    networks:
+      lab:
+        ipv4_address: 172.29.99.10
+
+  ftp:            # anonymous FTP with files in it
+    build: ftp
+    network_mode: service:box
+    depends_on: [box]
+
+  web:            # :80 redirects to lab.thm (+ a dev.lab.thm vhost), :8080 has an exposed .git
+    build: web
+    network_mode: service:box
+    depends_on: [box]
+
+  smb:            # null session can list shares; a guest-readable share
+    build: smb
+    network_mode: service:box
+    depends_on: [box]
+
+  nfs:            # an NFS export anyone can mount (userspace nfs-ganesha, no kernel nfsd needed)
+    build: nfs
+    network_mode: service:box
+    depends_on: [box]
+    cap_add: [DAC_READ_SEARCH]
+    tmpfs: [/srv/nfs]   # ganesha needs a filesystem with NFS file handles; overlayfs has none
+
+networks:
+  lab:
+    ipam:
+      config:
+        - subnet: 172.29.99.0/24

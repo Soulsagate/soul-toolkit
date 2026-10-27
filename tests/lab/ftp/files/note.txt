@@ -1,0 +1,4 @@
+Hi team,
+The old dev panel is still up on the web server - remember to take it down.
+Backups go to the backups/ folder until we fix the NFS share.
+- ops
