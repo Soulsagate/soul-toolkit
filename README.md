@@ -108,7 +108,7 @@ Each lead in the report also says *why* it matters, for example:
 
 ### 2. Reports you can read, share and keep
 
-`results/<target>/` (created in the folder you run it from - see [Output](#output) to find,
+`results/10.10.42.17/` (named after the target, created in the folder you run it from - see [Output](#output) to find,
 open or relocate it) gets:
 
 - **`report.md`** - Where to start, open ports, findings by severity, nmap script output, every
@@ -381,8 +381,8 @@ toolkit recon 10.10.42.17 -p 80 -m web \
 
 ### Output
 
-**Where it goes:** every run creates `results/<target>/` **in the folder you run `toolkit` from**
-(so running it from `~` gives `~/results/<target>/`). The folders are created for you, and under
+**Where it goes:** every run creates `results/<target>/` - for example `results/10.10.42.17/` -
+**in the folder you run `toolkit` from** (so running it from `~` gives `~/results/10.10.42.17/`). The folders are created for you, and under
 `sudo` they still belong to you, not root. The last lines of every run tell you exactly where
 the files are and how to open the report:
 
@@ -412,7 +412,7 @@ xdg-open ~/results/10.10.42.17/              # file manager
 What's inside:
 
 ```
-results/<target>/
+results/10.10.42.17/
 ├── report.md            # human-readable report (the main thing)
 ├── report.html          # same report, one self-contained file: light/dark, collapsible, copy buttons
 ├── findings.json        # everything, machine-readable
@@ -421,9 +421,9 @@ results/<target>/
 ├── nmap-services.xml    # raw stage 2 output
 ├── nmap-udp.xml         # raw UDP sweep (root only)
 ├── nmap-udp-services.xml  # raw UDP service scan
-├── gobuster-<port>.txt  # raw gobuster output per web port
-├── gobuster-<port>-<dir>.txt  # one per directory recursed into
-└── vhosts-<port>.json   # raw ffuf vhost results (.txt when gobuster was used)
+├── gobuster-80.txt      # raw gobuster output, one per web port
+├── gobuster-80-admin.txt  # one per directory recursed into
+└── vhosts-80.json       # raw ffuf vhost results (.txt when gobuster was used)
 ```
 
 `writeup.md` has YAML frontmatter (room, platform, date, tags from the open services) and uses

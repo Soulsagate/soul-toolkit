@@ -159,6 +159,7 @@ def test_module_calibrates_and_reports_vhosts(tmp_path, monkeypatch, vhost_serve
     [lead] = ctx.result.leads
     assert lead.kind == "web-vhosts"
     assert lead.command == "echo '10.10.10.10 hotel.thm admin.hotel.thm dev.hotel.thm' | sudo tee -a /etc/hosts"
+    assert f"`toolkit recon admin.hotel.thm -p {port}`" in lead.why and "<name>" not in lead.why
 
 
 def test_module_dynamic_wildcard_uses_autocalibration(tmp_path, monkeypatch, vhost_server):

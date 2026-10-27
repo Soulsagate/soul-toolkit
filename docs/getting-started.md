@@ -97,10 +97,14 @@ running.
 
 This example uses TryHackMe. Hack The Box works the same way with its own VPN file.
 
+**Replace example values, and never type the `< >` around placeholders.** `10.10.42.17` below
+stands for your machine's IP. If you see something like `<user>`, type the real value without
+the brackets: bash reads `<` and `>` as file redirects, so `toolkit recon <IP>` fails.
+
 **1. Connect to the VPN** in its own terminal, and leave that terminal open:
 
 ```bash
-sudo openvpn ~/Downloads/<your-username>.ovpn
+sudo openvpn ~/Downloads/yourname.ovpn   # the file you downloaded from the Access page
 ```
 
 When it prints `Initialization Sequence Completed`, you're connected. To check from another
@@ -140,7 +144,7 @@ each with a copy-paste command. Then it prints where everything was saved:
     open the report: xdg-open ~/results/10.10.42.17/report.html
 ```
 
-Results go into `results/<target>/` **inside the folder you ran the command from**. Copy the
+Results go into `results/10.10.42.17/` (named after the target) **inside the folder you ran the command from**. Copy the
 `xdg-open` line to open the report in your browser (on macOS use `open`).
 
 | File | What it is |
@@ -243,7 +247,7 @@ the code, activate the project's venv first (`source .venv/bin/activate`) and ru
 The full port sweep plus the UDP scan (as root) is the slow part. For a faster run use
 `--profile quick`, or add `--no-udp`. Long web scans are capped by `--brute-timeout`.
 
-**`[!] <tool> not installed - skipping ...`**
+**`[!] gobuster not installed - skipping ...`** (or any other tool)
 That's expected for optional tools you haven't installed. `toolkit doctor` shows the install
 command for your distro.
 
@@ -257,7 +261,7 @@ Current versions hand the files back to you automatically. To fix an old folder:
 
 **WSL2: no open ports / can't reach the target**
 Run the VPN *inside* WSL (`sudo openvpn your.ovpn` in the WSL terminal), not with the Windows
-OpenVPN client. WSL1 can't do the raw scans recon needs, so upgrade with `wsl --set-version <distro> 2`.
+OpenVPN client. WSL1 can't do the raw scans recon needs, so upgrade with `wsl --set-version Ubuntu 2` (use your distro's name from `wsl -l -v`).
 
 **Something else broke?**
 Open an issue on GitHub with the full terminal output (run with `-v` to include every command)

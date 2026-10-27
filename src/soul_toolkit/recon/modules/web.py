@@ -442,7 +442,8 @@ class WebModule(Module):
         ctx.result.leads = [x for x in ctx.result.leads if not (x.kind == "web-vhost" and x.port == svc.port)]
         ctx.lead("web-vhosts", svc.port, f"Add the new vhost(s) to /etc/hosts and enumerate them: {names}",
                  "These names serve something different from the default site - dev/admin/staging vhosts are a "
-                 f"classic CTF foothold. Then run `toolkit recon <name> -p {svc.port}` on {domain} and each vhost.",
+                 f"classic CTF foothold. Then scan each one, starting with "
+                 f"`toolkit recon {found[0]['host']} -p {svc.port}`.",
                  f"echo '{line}' | sudo tee -a /etc/hosts")
         return [Finding(self.name, svc.port, f"Virtual hosts found: {names}", "medium",
                         f"Add to /etc/hosts: `{line}`", {"vhosts": found, "hosts_line": line})]

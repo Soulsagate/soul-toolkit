@@ -6,6 +6,20 @@ All notable changes to this project. The format is based on
 
 ## Unreleased
 
+## 0.3.1 - 2026-10-27
+
+Fixes from the first run by someone other than the author: a fresh Linux Mint Debian Edition 6
+install against a TryHackMe box with SSH, HTTP, POP3 and IMAP.
+
+### Fixed
+
+- **No more `<IP>`-style placeholders to trip over.** The tester typed `<IP>` literally and bash
+  read `<` as a redirect. The README, the getting-started guide, `--help`, and the leads and
+  hints recon prints now use real example values (`10.10.42.17`, the vhost that was found, the
+  EDB-ID from the table) wherever they can. The guide says to replace example values and never
+  type the `< >` around placeholders. Placeholders only remain where a value can't be known, like
+  `ssh <user>@...`.
+
 ## 0.3.0 - 2026-10-27
 
 The "easy to pick up" release: a redesigned HTML report, a step-by-step guide for new users,

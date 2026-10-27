@@ -424,9 +424,10 @@ def _finding_body(data: dict) -> str:
     if "exploits" in data:
         rows = [[f'<span class="mono">{_e(x["edb_id"])}</span>', _e(x["title"]), _e(x["type"] or "-"),
                  "yes" if x["verified"] else "no"] for x in data["exploits"]]
+        first = _e(data["exploits"][0]["edb_id"]) if data["exploits"] else "12345"
         return (_table(["EDB-ID", "Title", "Type", "Verified"], rows)
-                + '<p class="hint">Read one with <code>searchsploit -x &lt;EDB-ID&gt;</code>, copy it here with '
-                  "<code>searchsploit -m &lt;EDB-ID&gt;</code>.</p>")
+                + f'<p class="hint">Read one with <code>searchsploit -x {first}</code>, copy it here with '
+                  f"<code>searchsploit -m {first}</code> (use the EDB-ID from the table).</p>")
     for key, label in (("listing", "listing"), ("entries", "entries")):
         if key in data:
             return _code("\n".join(data[key]), label, scroll=True)

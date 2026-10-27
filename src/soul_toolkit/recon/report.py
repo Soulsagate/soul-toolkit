@@ -170,7 +170,9 @@ def _finding_body(data: dict) -> str:
         rows = ["| EDB-ID | Title | Type | Verified |", "|---|---|---|---|"]
         rows += [f"| {e['edb_id']} | {_cell(e['title'])} | {e['type'] or '-'} | {'yes' if e['verified'] else 'no'} |"
                  for e in data["exploits"]]
-        rows += ["", "Read one with `searchsploit -x <EDB-ID>`, copy it here with `searchsploit -m <EDB-ID>`."]
+        first = data["exploits"][0]["edb_id"] if data["exploits"] else "12345"
+        rows += ["", f"Read one with `searchsploit -x {first}`, copy it here with `searchsploit -m {first}` "
+                     "(use the EDB-ID from the table)."]
         return "\n".join(rows)
     if "shares" in data:
         if not any("access" in s for s in data["shares"]):  # findings.json from before the read check

@@ -26,8 +26,8 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "examples:\n"
-            "  sudo toolkit recon 10.10.12.34\n"
-            "  toolkit recon 10.10.12.34 --quick --no-brute\n"
+            "  sudo toolkit recon 10.10.42.17\n"
+            "  toolkit recon 10.10.42.17 --quick --no-brute\n"
             "  toolkit recon cheese.thm --writeup    # + writeup.md for your notes vault\n"
             "  toolkit recon box.thm -p 80          # also fuzzes *.box.thm vhosts\n"
             "  toolkit recon target.thm -p 80,8080 -w /usr/share/seclists/Discovery/Web-Content/common.txt -x php,txt\n"
@@ -105,7 +105,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
         return 0
 
     if not args.target:
-        log.error("a target is required (e.g. toolkit recon 10.10.12.34)")
+        log.error("a target is required (e.g. toolkit recon 10.10.42.17)")
         return 2
 
     try:
