@@ -512,11 +512,20 @@ class WebModule(Module):
         if partial:
             detail += " (partial - time budget reached)"
 
+        # Apache answers 403 to every .ht* name and server-status on every server - on a typical box
+        # that's half the list. Keep them in the raw gobuster files, not in the report.
+        hidden = sum(1 for h in hits if _default_deny(h))
+        hits = [h for h in hits if not _default_deny(h)]
+        if hidden:
+            detail += (f"; {hidden} stock 403 response(s) (.ht*, server-status) hidden - "
+                       f"the raw list is in gobuster-{svc.port}*.txt")
+
         findings: list[Finding] = []
         if hits:
-            ctx.log.ok(f"{svc.label} web: {len(hits)} path(s) found")
+            ctx.log.ok(f"{svc.label} web: {len(hits)} path(s) found" + (f" (+{hidden} stock 403s hidden)" if hidden else ""))
             findings.append(Finding(self.name, svc.port, f"Content discovery: {len(hits)} path(s)", "info",
-                                    detail, {"paths": hits, "extensions": exts, "recursed": recursed}))
+                                    detail, {"paths": hits, "extensions": exts, "recursed": recursed,
+                                             "hidden_default_deny": hidden}))
             juicy = sorted((h for h in hits if is_interesting(h["path"]) and not _default_deny(h)),
                            key=_path_priority)
             if juicy:

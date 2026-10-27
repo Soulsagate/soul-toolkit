@@ -249,3 +249,36 @@ def test_default_deny_403s_are_not_interesting_leads(tmp_path):
     assert ".htpasswd" not in lead.title and "server-status" not in lead.title
     assert lead.command == "curl -si http://10.10.10.10/app/web.config.txt"   # an openable path first
     assert lead.title.index("/app/_test") < lead.title.index("/admin")       # 403s last
+
+
+# Real gobuster 3.8 output from the root of an Apache box (first real-world run).
+APACHE_ROOT_OUT = """\
+.hta                 (Status: 403) [Size: 293]
+.htpasswd            (Status: 403) [Size: 298]
+.htaccess            (Status: 403) [Size: 298]
+.htpasswd.txt        (Status: 403) [Size: 302]
+index.html           (Status: 200) [Size: 11321]
+index.html           (Status: 200) [Size: 11321]
+manual               (Status: 301) [Size: 317] [--> http://x/manual/]
+robots.txt           (Status: 200) [Size: 257]
+server-status        (Status: 403) [Size: 302]
+"""
+
+
+def test_stock_apache_403s_hidden_from_report(tmp_path, monkeypatch, gobuster_present):
+    calls = []
+    monkeypatch.setattr(runner, "run", fake_gobuster(calls, {"http://x": APACHE_ROOT_OUT}))
+    ctx = make_ctx(tmp_path, recurse=False)
+    [summary] = web.WebModule()._content_discovery(ctx, Service(80, name="http"), "http://x", page())
+    assert [h["path"] for h in summary.data["paths"]] == ["/index.html", "/manual", "/robots.txt"]
+    assert summary.title == "Content discovery: 3 path(s)"
+    assert summary.data["hidden_default_deny"] == 5
+    assert "5 stock 403 response(s)" in summary.detail and "gobuster-80*.txt" in summary.detail
+
+
+def test_only_stock_403s_counts_as_nothing_found(tmp_path, monkeypatch, gobuster_present):
+    out = ".htpasswd            (Status: 403) [Size: 298]\nserver-status        (Status: 403) [Size: 302]\n"
+    monkeypatch.setattr(runner, "run", fake_gobuster([], {"http://x": out}))
+    [f] = web.WebModule()._content_discovery(make_ctx(tmp_path, recurse=False), Service(80, name="http"),
+                                             "http://x", page())
+    assert f.title == "Content discovery: nothing found" and "2 stock 403" in f.detail
