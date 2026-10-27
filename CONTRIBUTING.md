@@ -46,7 +46,7 @@ ruff check .
 pytest -q
 ```
 
-CI runs the same on Python 3.9-3.13. Then try your change for real - the lab gives you a
+CI runs the same on Python 3.9-3.14. Then try your change for real - the lab gives you a
 deliberately vulnerable box on your own machine:
 
 ```bash

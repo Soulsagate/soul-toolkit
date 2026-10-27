@@ -12,6 +12,16 @@ All notable changes to this project. The format is based on
   and `pipx upgrade soul-toolkit`. The GitHub install is still documented for unreleased code,
   and the guide shows how to switch an older GitHub install over (`pipx install --force
   soul-toolkit`). The README has a PyPI version badge.
+- Python 3.14 is tested in CI (3.9-3.14 now) and listed in the package metadata.
+
+### Fixed
+
+- When nothing answers at all, the report and the console now say what usually causes that:
+  a wrong target IP or the VPN being down, with `ip -br addr show tun0` to check, then a slower
+  `--min-rate 300`. They used to suggest dropping `--quick` / `-p`, even when those flags hadn't
+  been used.
+- `toolkit doctor` on macOS printed a bare `# not needed - snmpwalk covers it` without saying
+  which tool it meant. It now reads `# onesixtyone: not needed, snmpwalk covers it`.
 
 ## 0.3.2 - 2026-10-27
 

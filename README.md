@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Soulsagate/soul-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Soulsagate/soul-toolkit/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/soul-toolkit)](https://pypi.org/project/soul-toolkit/)
-![Python 3.9-3.13](https://img.shields.io/badge/python-3.9%E2%80%933.13-blue)
+![Python 3.9-3.14](https://img.shields.io/badge/python-3.9%E2%80%933.14-blue)
 ![No dependencies](https://img.shields.io/badge/dependencies-none%20(stdlib%20only)-brightgreen)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/Soulsagate/soul-toolkit/blob/main/LICENSE)
 
@@ -453,7 +453,7 @@ pytest -q
 
 Tests use recorded tool output and throwaway servers on `127.0.0.1`, so they run anywhere without
 touching real targets; tests that need a real tool skip when it isn't installed. CI runs the same
-on Python 3.9-3.13.
+on Python 3.9-3.14.
 
 - [CONTRIBUTING.md](https://github.com/Soulsagate/soul-toolkit/blob/main/CONTRIBUTING.md) - ground rules and workflow
 - [docs/writing-a-module.md](https://github.com/Soulsagate/soul-toolkit/blob/main/docs/writing-a-module.md) - add a service module, step by step
