@@ -150,6 +150,7 @@ output:
   -o, --output DIR        output directory (default ./results)
   --writeup               also write writeup.md (Obsidian-friendly skeleton, Recon pre-filled)
   --room NAME             room/box name for the writeup (implies --writeup)
+  --config FILE           settings file (default: ~/.config/soul-toolkit/config.ini)
   -v, --verbose           print every command as it runs
   -q, --quiet             warnings and errors only
 ```
@@ -163,6 +164,28 @@ output:
 | `thorough` | default + UDP even with `-p` (root), SecLists' bigger lists (raft-medium, subdomains-top1million-20000) when installed, 30 min web budget |
 
 Any flag you pass on top overrides the profile: `--profile quick --udp` is quick, plus UDP.
+
+### Config file
+
+Settings you'd pass every time (your wordlists, threads, where results go, a default profile) can
+live in `~/.config/soul-toolkit/config.ini`:
+
+```bash
+toolkit config --init   # writes a commented example
+toolkit config          # shows the file and the value + source of every setting
+```
+
+```ini
+[recon]
+profile = default
+wordlist = ~/wordlists/raft-medium-directories.txt
+output = ~/ctf/results
+threads = 40
+jobs = 4
+```
+
+Order of precedence: built-in defaults < profile < config file < command-line flags. Under `sudo`
+the invoking user's config is read (and `~` means their home), not root's.
 
 Common patterns:
 

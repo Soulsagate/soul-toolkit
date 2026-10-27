@@ -82,6 +82,8 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
                      help="also write writeup.md: an Obsidian-friendly skeleton with the Recon section filled in")
     out.add_argument("--room", metavar="NAME", help="room/box name for the writeup (implies --writeup; "
                      "default: the target, minus .thm/.htb)")
+    out.add_argument("--config", metavar="FILE",
+                     help="settings file (default: ~/.config/soul-toolkit/config.ini, used if it exists)")
     out.add_argument("-v", "--verbose", action="store_true", help="show the commands being run")
     out.add_argument("-q", "--quiet", action="store_true", help="only print warnings and errors")
 
@@ -93,7 +95,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
     from soul_toolkit.recon import nmap
     from soul_toolkit.recon.engine import ReconConfig, run_recon
     from soul_toolkit.recon.modules import Options, all_modules, select_modules
-    from soul_toolkit.recon.settings import DEFAULTS, resolve
+    from soul_toolkit.recon.settings import DEFAULTS, ConfigError, default_config_path, load_config, resolve
 
     log = Logger(verbose=args.verbose, quiet=args.quiet)
 
@@ -113,8 +115,14 @@ def cmd_recon(args: argparse.Namespace) -> int:
             modules = []
         else:
             modules = select_modules(args.modules.split(",") if args.modules else None)
-        profile = args.profile or "default"
-        s = resolve({k: getattr(args, k, None) for k in DEFAULTS}, profile)
+        config_path = Path(args.config).expanduser() if args.config else default_config_path()
+        if args.config and not config_path.is_file():
+            raise ConfigError(f"config file not found: {config_path}")
+        config, config_profile, warnings = load_config(config_path)
+        for w in warnings:
+            log.warn(w)
+        profile = args.profile or config_profile or "default"
+        s = resolve({k: getattr(args, k, None) for k in DEFAULTS}, profile, config)
     except (InvalidTarget, ValueError) as exc:
         log.error(str(exc))
         return 2
@@ -147,7 +155,9 @@ def cmd_recon(args: argparse.Namespace) -> int:
 
     if not args.quiet:
         log.info(BANNER)
-        log.info(f"Target: {target}" + (f"  (profile: {profile})" if args.profile else ""))
+        log.info(f"Target: {target}" + (f"  (profile: {profile})" if profile != "default" else ""))
+        if config:
+            log.debug(f"Settings from {config_path}: {', '.join(sorted(config))}")
     try:
         run_recon(cfg, log)
     except ToolMissing as exc:
@@ -182,6 +192,58 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return run_doctor(show_all=args.all)
 
 
+# --------------------------------------------------------------------------- config
+
+
+def add_config_parser(sub: argparse._SubParsersAction) -> None:
+    p = sub.add_parser("config", help="show the settings file and the values recon will use",
+                       description="Show where the settings file lives and the effective recon settings "
+                                   "(defaults < profile < config file; flags still override at run time).")
+    p.add_argument("--init", action="store_true", help="write a commented example config file if none exists")
+    p.add_argument("--path", metavar="FILE", help="config file to use instead of the default location")
+    p.set_defaults(func=cmd_config)
+
+
+def cmd_config(args: argparse.Namespace) -> int:
+    from soul_toolkit.recon.settings import (
+        DEFAULTS,
+        EXAMPLE_CONFIG,
+        ConfigError,
+        default_config_path,
+        load_config,
+        resolve,
+    )
+
+    path = Path(args.path).expanduser() if args.path else default_config_path()
+    if args.init:
+        if path.exists():
+            print(f"{path} already exists - not touching it.")
+            return 1
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(EXAMPLE_CONFIG, encoding="utf-8")
+        print(f"Wrote an example config to {path}")
+        return 0
+    try:
+        config, profile, warnings = load_config(path)
+    except ConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    for w in warnings:
+        print(f"warning: {w}", file=sys.stderr)
+    state = "found" if path.is_file() else "not found - using defaults; create one with: toolkit config --init"
+    print(f"Config file: {path} ({state})")
+    print(f"Profile:     {profile or 'default'}")
+    effective = resolve(dict.fromkeys(DEFAULTS), profile or "default", config)
+    for key in DEFAULTS:
+        source = "config" if key in config else ("profile" if effective[key] != DEFAULTS[key] else "default")
+        value = effective[key]
+        if value is None or value == "":
+            value = {"udp": "auto (on as root unless -p is given)", "extensions": "auto (from the fingerprint)"}.get(
+                key, "auto (SecLists if installed, else bundled)")
+        print(f"  {key:<15} {value!s:<45} ({source})")
+    return 0
+
+
 # --------------------------------------------------------------------------- main
 
 
@@ -194,6 +256,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", metavar="<command>")
     add_recon_parser(sub)
     add_doctor_parser(sub)
+    add_config_parser(sub)
     return parser
 
 

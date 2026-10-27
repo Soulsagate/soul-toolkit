@@ -110,6 +110,16 @@ def run_doctor(show_all: bool = False, out=None) -> int:
     say(f"soul-toolkit {__version__} doctor")
     say(f"  Python {platform.python_version()} · platform: {PLATFORMS.get(plat, 'unknown')}"
         f" · root: {'yes' if is_root() else 'no (SYN and UDP scans need sudo)'}")
+    from soul_toolkit.recon.settings import ConfigError, default_config_path, load_config
+
+    cfg_path = default_config_path()
+    try:
+        cfg_values, cfg_profile, _ = load_config(cfg_path)
+        cfg_state = (f"{len(cfg_values)} setting(s)" + (f", profile {cfg_profile}" if cfg_profile else "")
+                     if cfg_path.is_file() else "none - defaults (toolkit config --init to create one)")
+    except ConfigError as exc:
+        cfg_state = f"ERROR: {exc}"
+    say(f"  config: {cfg_path} ({cfg_state})")
     say()
     say("Tools:")
     missing: list[Tool] = []
@@ -143,7 +153,7 @@ def run_doctor(show_all: bool = False, out=None) -> int:
                 pkgs.append(SECLISTS[p])
             cmds = install_commands(pkgs)
             if p == "macos" and need_seclists:
-                cmds.append(f"{SECLISTS_CLONE}  # then pass its lists with -w / --vhost-wordlist")
+                cmds.append(f"{SECLISTS_CLONE}  # then set wordlist / vhost_wordlist in `toolkit config`")
             if p == "debian" and any(name in KALI_ONLY for _, name in pkgs):
                 cmds.append("# exploitdb and seclists are Kali packages; on Debian/Ubuntu install them from GitHub")
             label = PLATFORMS[p] + (" (this machine)" if p == plat else "")

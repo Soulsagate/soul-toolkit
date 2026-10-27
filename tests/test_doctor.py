@@ -48,7 +48,7 @@ def test_missing_optional_tools(monkeypatch):
     assert "sudo apt install ffuf exploitdb smbclient nfs-common snmp onesixtyone seclists" in debian
     assert "Kali packages" in debian
     assert "yay -S exploitdb onesixtyone seclists" in out
-    assert "brew install ffuf exploitdb samba net-snmp" in out and "SecLists.git" in out
+    assert "brew install ffuf exploitdb samba net-snmp" in out and "SecLists.git" in out and "toolkit config" in out
     # detected platform first
     assert out.index("Kali / Debian / Ubuntu") < out.index("Arch /") < out.index("macOS:")
 
