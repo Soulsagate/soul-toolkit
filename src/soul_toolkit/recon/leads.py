@@ -17,6 +17,7 @@ WHERE_TO_START = 5
 SCORES: dict[str, int] = {
     "backdoor": 100,             # a version with a known backdoor
     "ftp-fsroot": 95,            # anonymous FTP rooted at /
+    "mysql-empty": 92,           # database root with no password
     "web-git": 90,               # source code + history
     "ftp-webroot": 88,           # anonymous FTP that looks like the web root
     "nfs-world": 90,             # NFS export anyone can mount
@@ -26,6 +27,7 @@ SCORES: dict[str, int] = {
     "smb-share": 75,             # a readable-looking share via null session
     "web-vhosts": 75,            # extra virtual hosts discovered
     "web-vhost": 70,             # redirect to a name-based vhost
+    "mysql-anon": 70,            # anonymous database login
     "exploit-remote": 65,        # other remote/webapps Exploit-DB matches
     "web-paths": 60,             # interesting paths from content discovery
     "web-wordpress": 60,
@@ -39,6 +41,7 @@ SCORES: dict[str, int] = {
     "rescan": 15,                # the scan itself was limited
     "udp": 12,                   # UDP wasn't scanned
     "ssh-later": 10,
+    "db-later": 8,               # database that wants a password
 }
 
 
