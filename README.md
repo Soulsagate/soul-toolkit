@@ -5,29 +5,158 @@
 ![No dependencies](https://img.shields.io/badge/dependencies-none%20(stdlib%20only)-brightgreen)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-A modular pentest toolkit for **authorized** labs, CTFs and TryHackMe / Hack The Box boxes.
-One command, sub-commands per job. The first (and flagship) command is **`recon`**.
+A recon tool for **authorized** labs, CTFs and TryHackMe / Hack The Box boxes, built for people
+who are still learning what to do with a port list.
+
+Tools like AutoRecon already scan broadly. `toolkit recon` scans, then **tells you exactly what
+to try next, ranked**, with a copy-paste command for each - and hands you output you can use
+straight away: a Markdown report, a self-contained HTML report, and a writeup skeleton for your
+notes vault.
 
 > ⚠️ **Authorized use only.** Only point this at machines you own or have explicit
 > permission to test. Read [DISCLAIMER.md](DISCLAIMER.md).
 
-## `toolkit recon`
-
-Give it an IP, get back a clean report instead of a terminal full of scrollback.
-
-```
-toolkit recon 10.10.42.17
+```bash
+pipx install git+https://github.com/Soulsagate/soul-toolkit
+toolkit doctor                           # what's installed, how to get the rest
+sudo "$(which toolkit)" recon 10.10.42.17
 ```
 
-It runs recon in stages, and each stage decides what the next one does:
+## What you get
+
+Everything below is real output from one run against the deliberately vulnerable lab in
+[`tests/lab/`](tests/lab/) (anonymous FTP, a web app with an exposed `.git` and a hidden vhost,
+null-session SMB, a world-readable NFS export), run as root with the default profile:
+`toolkit recon 172.29.99.10 --writeup --room "Soul Lab"`.
+
+### 1. Where to start
+
+The run ends with the most promising leads across *all* services - ranked by fixed rules, not by
+which port happened to be scanned first - each with the command to run next. It's also the first
+section of the report.
+
+```
+[*] soul-toolkit v0.2.0 :: authorized targets only (see DISCLAIMER.md)
+[*] Target: 172.29.99.10
+[>] Stage 1/4: port sweep (all 65535 TCP ports)
+[+] Open ports: 21, 80, 111, 139, 445, 875, 2049, 8080, 20048, 42857
+[>] Stage 2/4: service/version scan on 10 port(s)
+[*]   21/tcp     ftp            vsftpd 2.0.8 or later
+[*]   80/tcp     http           nginx 1.24.0 (Ubuntu)
+[*]   111/tcp    rpcbind        2-4 (RPC #100000)
+[*]   139/tcp    netbios-ssn    Samba smbd 4.6.2
+[*]   445/tcp    netbios-ssn    Samba smbd 4.6.2
+[*]   875/tcp    rquotad        1-2 (RPC #100011)
+[*]   2049/tcp   nfs            3-4 (RPC #100003)
+[*]   8080/tcp   http           nginx 1.24.0 (Ubuntu)
+[*]   20048/tcp  mountd         1-3 (RPC #100005)
+[*]   42857/tcp  nlockmgr       4 (RPC #100021)
+[>] Stage 3/4: UDP scan (top 100 ports)
+[+] Open UDP ports: 111, 2049
+[*]   111/udp    rpcbind        2-4 (RPC #100000)
+[*]   2049/udp   nfs            3-4 (RPC #100003)
+[>] Stage 4/4: service modules (web, ftp, ssh, smb, nfs, smtp, snmp, mysql, postgres, redis, rdp, winrm, ldap, exploits)
+[*] 21/tcp ftp: checking anonymous login
+[*] 80/tcp web: fingerprinting http://172.29.99.10
+[!] searchsploit not installed - skipping exploit lookups
+[*] 445/tcp smb: trying null-session share listing
+[*] 2049/tcp nfs: listing exports
+[+] 21/tcp ftp: anonymous login works
+[*] 8080/tcp web: fingerprinting http://172.29.99.10:8080
+[+] 2049/tcp nfs: 1 export(s), 1 open to everyone
+[*] 80/tcp web: gobuster with /usr/share/seclists/Discovery/Web-Content/common.txt
+[!] 80/tcp web: wildcard responses under http://172.29.99.10 (length 154), retrying with --exclude-length
+[*] 8080/tcp web: gobuster with /usr/share/seclists/Discovery/Web-Content/common.txt, -x html,txt (static HTML (page links))
+[+] 445/tcp smb: 2 share(s) listed
+[*] 80/tcp web: vhost fuzzing *.lab.thm with ffuf (/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt; filtering wildcard size 154)
+[+] 80/tcp web: 1 vhost(s) found: dev.lab.thm
+[+] 80/tcp web: add to /etc/hosts: 172.29.99.10 lab.thm dev.lab.thm
+[*] 8080/tcp web: recursing into /admin/
+[*] 8080/tcp web: recursing into /backup/
+[+] 8080/tcp web: 12 path(s) found
+[+] Done in 46s - 12 open port(s), 11 finding(s) (7 medium/high)
+[+] Where to start:
+    1. Mount the NFS export /srv/nfs (read-only) (2049/tcp)
+       $ sudo mkdir -p /mnt/nfs-srv-nfs && sudo mount -t nfs -o ro,nolock 172.29.99.10:/srv/nfs /mnt/nfs-srv-nfs
+    2. Dump the exposed .git repository (8080/tcp)
+       $ git-dumper http://172.29.99.10:8080/.git/ ./8080-git
+    3. Download everything from anonymous FTP (21/tcp)
+       $ wget -m ftp://anonymous:anonymous@172.29.99.10/
+    4. Add the new vhost(s) to /etc/hosts and enumerate them: dev.lab.thm (80/tcp)
+       $ echo '172.29.99.10 lab.thm dev.lab.thm' | sudo tee -a /etc/hosts
+    5. Connect to the 'public' share with a null session (445/tcp)
+       $ smbclient //172.29.99.10/public -N
+[+] Report: results/172.29.99.10/report.md  (HTML: report.html)
+[+] Writeup: results/172.29.99.10/writeup.md
+```
+
+<sub>Per-module progress lines (`[*] [3/12] 445/tcp smb finished in 0:00`) are trimmed from this
+excerpt. searchsploit wasn't installed on the machine that made this run, so the `exploits`
+module skipped itself - which is exactly what a missing optional tool does.</sub>
+
+Each lead in the report also says *why* it matters, for example:
+
+> 1. **Mount the NFS export /srv/nfs (read-only)** (2049/tcp)
+>    It's exported to everyone. Exports often hold home directories, backups and SSH keys. Note
+>    file owners - root-owned files you can create there mean no_root_squash (a privesc lead later).
+
+### 2. Reports you can read, share and keep
+
+`results/<target>/` gets:
+
+- **`report.md`** - Where to start, open ports, findings by severity, nmap script output, every
+  command that was run. Full sample: **[docs/sample-report.md](docs/sample-report.md)**
+- **`report.html`** - the same in one self-contained file: light/dark, collapsible findings,
+  severity colours, a Copy button on every command. Sample:
+  [docs/sample-report.html](docs/sample-report.html) (download and open it)
+- **`findings.json`** - everything, for your own scripts
+
+### 3. A writeup that's already started
+
+With `--writeup` (or `--room NAME`) you also get `writeup.md`: Obsidian-friendly frontmatter, the
+Recon section filled in, and empty Foothold / Privilege Escalation / Flags sections waiting for
+you. Sample: **[docs/sample-writeup.md](docs/sample-writeup.md)**. From the same run:
+
+```markdown
+---
+title: "Soul Lab"
+room: "Soul Lab"
+target: "172.29.99.10"
+date: 2026-10-27
+tags:
+  - writeup
+  - ftp
+  - web
+  - rpc
+  - smb
+  - nfs
+status: in-progress
+---
+...
+### Leads to try
+
+- [ ] **Mount the NFS export /srv/nfs (read-only)** (2049/tcp) - `sudo mkdir -p /mnt/nfs-srv-nfs && sudo mount -t nfs -o ro,nolock 172.29.99.10:/srv/nfs /mnt/nfs-srv-nfs`
+- [ ] **Dump the exposed .git repository** (8080/tcp) - `git-dumper http://172.29.99.10:8080/.git/ ./8080-git`
+- [ ] **Download everything from anonymous FTP** (21/tcp) - `wget -m ftp://anonymous:anonymous@172.29.99.10/`
+- [ ] **Add the new vhost(s) to /etc/hosts and enumerate them: dev.lab.thm** (80/tcp) - `echo '172.29.99.10 lab.thm dev.lab.thm' | sudo tee -a /etc/hosts`
+- [ ] **Connect to the 'public' share with a null session** (445/tcp) - `smbclient //172.29.99.10/public -N`
+```
+
+## How it works
+
+It runs in stages, and each stage decides what the next one does:
 
 | Stage | What happens |
 |---|---|
-| 1. Port sweep | `nmap` across all 65535 TCP ports (or top 1000 with `--quick`) |
+| 1. Port sweep | `nmap` across all 65535 TCP ports (top 1000 with `--quick` / `--profile quick`) |
 | 2. Service scan | `nmap -sV -sC` on only the open ports |
-| 3. UDP scan | top 100 UDP ports, then `-sV -sC` on the ones that answer (root only: on by default under sudo unless `-p` is given; `--udp` / `--no-udp`) |
-| 4. Service modules | follow-ups chosen per service (see below) |
-| 5. Report | `report.md` + `report.html` + `findings.json`: a ranked **Where to start** list (best leads across all services, each with why and a copy-paste command), then findings by severity |
+| 3. UDP scan | top 100 UDP ports, then `-sV -sC` on the ones that answer (root only: on by default under sudo unless `-p` is given) |
+| 4. Service modules | follow-ups chosen per service, run in parallel (see below) |
+| 5. Leads + reports | every module's leads ranked into **Where to start**; `report.md`, `report.html`, `findings.json` (+ `writeup.md`) |
+
+A live status line shows what's running and for how long. **Ctrl-C is safe**: running tools are
+stopped and you get a partial report with everything that finished. `--resume` reuses the nmap
+results of an earlier run.
 
 ### Service modules
 
@@ -50,32 +179,9 @@ It runs recon in stages, and each stage decides what the next one does:
 
 Each module is one small file in [`src/soul_toolkit/recon/modules/`](src/soul_toolkit/recon/modules/). Adding a service = one class with `matches()` and `run()`.
 
-### Example output
-
-Real run against a local test lab (an anonymous FTP server, a web server with an exposed `.git`, and a catch-all web server that answers 200 to everything). Full report: **[docs/sample-report.md](docs/sample-report.md)**.
-
-```
-[*] soul-toolkit v0.1.0 :: authorized targets only (see DISCLAIMER.md)
-[*] Target: 127.0.0.1
-[>] Stage 1/3: port sweep (top 1000 TCP ports)
-[+] Open ports: 2121, 8080, 8081
-[>] Stage 2/3: service/version scan on 3 port(s)
-[*]   2121/tcp   ftp
-[*]   8080/tcp   http           SimpleHTTPServer 0.6 (Python 3.13.17)
-[*]   8081/tcp   http           BaseHTTPServer 0.6 (Python 3.13.17)
-[>] Stage 3/3: service modules (web, ftp, ssh, smb)
-[*] 2121/tcp ftp: checking anonymous login
-[+] 2121/tcp ftp: anonymous login works
-[*] 8080/tcp web: fingerprinting http://127.0.0.1:8080
-[*] 8080/tcp web: gobuster with src/soul_toolkit/data/web-common.txt
-[+] 8080/tcp web: 7 path(s) found
-[*] 8081/tcp web: fingerprinting http://127.0.0.1:8081
-[*] 8081/tcp web: gobuster with src/soul_toolkit/data/web-common.txt
-[!] 8081/tcp web: wildcard responses (length 46), retrying with --exclude-length
-[+] 8081/tcp web: 1 path(s) found
-[+] Done in 34s - 3 open port(s), 9 finding(s) (4 medium/high)
-[+] Report: results/127.0.0.1/report.md
-```
+Missing an optional tool only skips that check, with an install hint - `toolkit doctor` shows what
+you have. Want another service? [docs/writing-a-module.md](docs/writing-a-module.md) walks through
+adding one.
 
 ## Install
 
@@ -225,6 +331,9 @@ sudo "$(which toolkit)" recon 10.10.42.17
 # Fast first look, no brute-forcing
 toolkit recon 10.10.42.17 --quick --no-brute
 
+# Leave it running: UDP, bigger SecLists wordlists, longer web budget
+sudo "$(which toolkit)" recon 10.10.42.17 --profile thorough
+
 # Box redirected you to a vhost? Add it to /etc/hosts, then target the name
 toolkit recon cheese.thm -p 80 -x php,txt,html
 
@@ -238,10 +347,6 @@ toolkit recon 10.10.42.17 --resume -w /usr/share/seclists/Discovery/Web-Content/
 toolkit recon 10.10.42.17 -p 80 -m web \
   -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
 ```
-
-While it runs, a live status line shows what's running and for how long (nmap stages and every
-module run, in parallel). **Ctrl-C is safe**: running tools are stopped and a *partial* report is
-written with everything that finished, marked as partial and listing what didn't.
 
 ### Output
 
