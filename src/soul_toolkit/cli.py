@@ -56,6 +56,8 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
     mods = p.add_argument_group("modules")
     mods.add_argument("-m", "--modules", help="comma-separated modules to run (default: all)")
     mods.add_argument("--no-modules", action="store_true", help="nmap only, no follow-up modules")
+    mods.add_argument("-j", "--jobs", type=int, metavar="N",
+                      help="module runs in parallel (default 4; 1 = one at a time)")
     mods.add_argument("--list-modules", action="store_true", help="list available modules and exit")
     mods.add_argument("--no-brute", dest="brute", action="store_false", default=None,
                       help="skip content discovery and vhost fuzzing")
@@ -127,6 +129,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
         modules=modules,
         writeup=args.writeup or bool(args.room),
         room=args.room,
+        jobs=max(1, s["jobs"]),
         options=Options(
             brute=s["brute"],
             wordlist=s["wordlist"],
@@ -154,7 +157,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
         log.error(f"{exc.strerror or exc}: {exc.filename or ''}".rstrip(": "))
         return 1
     except KeyboardInterrupt:
-        log.warn("Interrupted.")
+        log.warn("Interrupted - the partial report above has everything that finished.")
         return 130
     return 0
 

@@ -82,6 +82,10 @@ def render_writeup(r: HostResult, room: str | None = None, today: date | None = 
     add(f"# {room}")
     add("")
     where = f"`{r.target}`" + (f" · {platform}" if platform else "")
+    if r.interrupted:
+        add("> [!warning] Partial recon")
+        add(f"> The scan was interrupted. Not finished: {'; '.join(r.incomplete) or 'unknown'}.")
+        add("")
     add("> [!info] Target")
     add(f"> {where} · recon by soul-toolkit v{__version__} on {today.isoformat()}")
     add("")

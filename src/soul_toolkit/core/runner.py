@@ -9,8 +9,14 @@ from __future__ import annotations
 import shlex
 import shutil
 import subprocess
+import threading
 import time
 from dataclasses import dataclass
+
+# Child processes currently running, so an interrupt can stop them all (module threads included).
+_active: set[subprocess.Popen] = set()
+_lock = threading.Lock()
+_stopping = threading.Event()
 
 
 class ToolMissing(RuntimeError):
@@ -58,19 +64,43 @@ def _to_text(data: str | bytes | None) -> str:
 
 
 def run(cmd: list[str], timeout: float | None = None) -> CommandResult:
-    """Run *cmd* and capture its output. Never raises on non-zero exit."""
+    """Run *cmd* and capture its output. Never raises on non-zero exit.
+
+    After stop_all() it starts nothing and returns a failed result straight away."""
     start = time.monotonic()
+    if _stopping.is_set():
+        return CommandResult(cmd, -1, "", "not started: run interrupted", 0.0)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace")
+    with _lock:
+        _active.add(proc)
     try:
-        proc = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            errors="replace",
-            timeout=timeout,
-            check=False,
-        )
-        return CommandResult(cmd, proc.returncode, proc.stdout, proc.stderr, time.monotonic() - start)
-    except subprocess.TimeoutExpired as exc:
-        return CommandResult(
-            cmd, -1, _to_text(exc.stdout), _to_text(exc.stderr), time.monotonic() - start, timed_out=True
-        )
+        out, err = proc.communicate(timeout=timeout)
+        return CommandResult(cmd, proc.returncode, out, err, time.monotonic() - start)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        out, err = proc.communicate()
+        return CommandResult(cmd, -1, _to_text(out), _to_text(err), time.monotonic() - start, timed_out=True)
+    except BaseException:  # Ctrl-C in the calling thread: don't leave the child behind
+        proc.kill()
+        proc.wait()
+        raise
+    finally:
+        with _lock:
+            _active.discard(proc)
+
+
+def stop_all() -> None:
+    """Terminate every running child process and refuse to start new ones (used on Ctrl-C)."""
+    _stopping.set()
+    with _lock:
+        procs = list(_active)
+    for p in procs:
+        try:
+            p.terminate()
+        except OSError:
+            pass
+
+
+def reset() -> None:
+    """Allow commands again after stop_all() (tests, or a second run in one process)."""
+    _stopping.clear()

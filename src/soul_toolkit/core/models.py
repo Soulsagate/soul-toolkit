@@ -97,6 +97,8 @@ class HostResult:
     leads: list[Lead] = field(default_factory=list)
     commands: list[str] = field(default_factory=list)
     udp_scanned: bool = False
+    interrupted: bool = False  # Ctrl-C: the report only holds what finished
+    incomplete: list[str] = field(default_factory=list)  # stages / module runs that didn't finish
     started: str = ""
     finished: str = ""
     duration: float = 0.0

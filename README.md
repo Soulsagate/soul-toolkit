@@ -135,6 +135,7 @@ modules:
   -m, --modules LIST      only run these modules (e.g. web,ftp)
   --no-modules            nmap only
   --list-modules          show available modules
+  -j, --jobs N            module runs in parallel (default 4)
   --no-brute              skip content discovery and vhost fuzzing
   --no-vhost              skip vhost fuzzing only
   --vhost-wordlist FILE   vhost wordlist (default: SecLists subdomains-top1million-5000.txt, else bundled)
@@ -181,6 +182,10 @@ toolkit recon cheese.thm --room "Cheese CTF"
 toolkit recon 10.10.42.17 -p 80 -m web \
   -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
 ```
+
+While it runs, a live status line shows what's running and for how long (nmap stages and every
+module run, in parallel). **Ctrl-C is safe**: running tools are stopped and a *partial* report is
+written with everything that finished, marked as partial and listing what didn't.
 
 ### Output
 

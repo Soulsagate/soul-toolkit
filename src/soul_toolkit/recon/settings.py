@@ -23,6 +23,7 @@ DEFAULTS: dict[str, Any] = {
     "threads": 30,
     "brute_timeout": 600,
     "output": "results",
+    "jobs": 4,               # module runs in parallel
 }
 
 # Bigger lists the thorough profile uses when SecLists has them (first one found wins).

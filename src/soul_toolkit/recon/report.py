@@ -53,6 +53,10 @@ def render_markdown(r: HostResult) -> str:
     add(f"| Started | {r.started} |")
     add(f"| Duration | {_fmt_duration(r.duration)} |")
     add("")
+    if r.interrupted:
+        add(f"> ⚠️ **Partial report** - the run was interrupted (Ctrl-C). Not finished: "
+            f"{_cell('; '.join(r.incomplete) or 'unknown')}. Re-run to complete it.")
+        add("")
 
     # Summary by severity
     findings = r.sorted_findings()
