@@ -101,3 +101,13 @@ def test_engine_writes_writeup(tmp_path, monkeypatch):
     engine.run_recon(cfg, Logger(quiet=True))
     text = (tmp_path / "box.thm" / "writeup.md").read_text()
     assert 'room: "box"' in text and "## Foothold" in text
+
+
+def test_rpc_helpers_collapse_into_nfs_tag():
+    from soul_toolkit.core.models import Service
+
+    r = HostResult("10.10.10.10", services=[
+        Service(111, name="rpcbind"), Service(875, name="rquotad"), Service(2049, name="nfs"),
+        Service(20048, name="mountd"), Service(42857, name="nlockmgr"), Service(2049, protocol="udp", name="nfs"),
+    ])
+    assert writeup.tags_for(r) == ["writeup", "rpc", "nfs"]
