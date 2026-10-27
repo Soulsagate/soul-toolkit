@@ -517,7 +517,7 @@ class WebModule(Module):
                       deadline: float) -> GobusterRun:
         cmd = [
             "gobuster", "dir", "-u", url, "-w", wordlist,
-            "-t", str(ctx.options.threads), "-q", "-z", "--no-error", "--no-color",
+            "-t", str(ctx.options.threads), "-q", "--no-progress", "--no-error", "--no-color",
             "--timeout", f"{ctx.options.http_timeout}s", "-o", str(outfile),
         ]
         if svc.is_tls:

@@ -21,7 +21,7 @@ SYSTEM_WORDLISTS = (
 
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 # gobuster >= 3.2: "Found: dev.box.thm Status: 200 [Size: 47]"; older: "Found: dev.box.thm (Status: 200) [Size: 47]"
-_GB_VHOST = re.compile(r"^Found:\s+(?P<host>\S+)\s+\(?Status:\s*(?P<status>\d+)\)?\s*\[Size:\s*(?P<size>\d+)\]")
+_GB_VHOST = re.compile(r"^(?:Found:\s+)?(?P<host>\S+)\s+\(?Status:\s*(?P<status>\d+)\)?\s*\[Size:\s*(?P<size>\d+)\]")
 
 
 def bundled_wordlist() -> str:
@@ -82,7 +82,8 @@ def build_gobuster_vhost(base: str, domain: str, wordlist: str, outfile: Path, *
                          filter_size: int | None, tls: bool) -> list[str]:
     cmd = [
         "gobuster", "vhost", "-u", base, "-w", wordlist, "--append-domain", "--domain", domain,
-        "-t", str(threads), "-q", "-z", "--no-color", "--no-error", "--timeout", f"{timeout}s", "-o", str(outfile),
+        "-t", str(threads), "-q", "--no-progress", "--no-color", "--no-error",
+        "--timeout", f"{timeout}s", "-o", str(outfile),
     ]
     if filter_size is not None:
         cmd += ["--exclude-length", str(filter_size)]

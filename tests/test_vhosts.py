@@ -250,3 +250,9 @@ def test_vhosts_lead_replaces_redirect_lead(tmp_path, monkeypatch, vhost_server)
     ctx.lead("web-vhost", 8080, "Other port", "redirect", "echo other")
     web.WebModule()._vhost_fuzz(ctx, Service(port, name="http"), f"http://127.0.0.1:{port}", "hotel.thm")
     assert [(x.kind, x.port) for x in ctx.result.leads] == [("web-vhost", 8080), ("web-vhosts", port)]
+
+
+def test_parse_gobuster_vhost_38_format():
+    # gobuster 3.8 dropped the "Found:" prefix; both formats must parse.
+    out = "admin.hotel.thm Status: 200 [Size: 13]\ndev.hotel.thm Status: 200 [Size: 13]\nnoise line\n"
+    assert [v["host"] for v in vhosts.parse_gobuster_vhost(out)] == ["admin.hotel.thm", "dev.hotel.thm"]
