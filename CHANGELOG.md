@@ -37,6 +37,10 @@ install against a TryHackMe box with SSH, HTTP, POP3 and IMAP.
   EDB-ID from the table) wherever they can. The guide says to replace example values and never
   type the `< >` around placeholders. Placeholders only remain where a value can't be known, like
   `ssh <user>@...`.
+- **robots.txt that only says `Disallow: /`** (or has no entries) no longer becomes a lead. On
+  the tester's box it was the #1 lead in "Where to start", pointing at nothing. It's now an info
+  finding, "robots.txt only blocks the whole site". The lead appears only when robots.txt names
+  specific paths, and it counts only those.
 
 ## 0.3.0 - 2026-10-27
 

@@ -258,6 +258,11 @@ def readable_files(hits: list[dict]) -> list[dict]:
     return sorted(files, key=lambda h: (not h["path"].lower().endswith(_FIRST_TEXT_EXTS), h["path"]))
 
 
+def robots_pointers(entries: list[str]) -> list[str]:
+    """Entries that point somewhere specific. `Disallow: /` (block everything) points nowhere."""
+    return [e for e in entries if e.partition(":")[2].strip() not in ("", "/")]
+
+
 def is_interesting(path: str) -> bool:
     p = path.lower()
     return any(k in p for k in INTERESTING)
@@ -335,12 +340,18 @@ class WebModule(Module):
         robots = fetch(base + "/robots.txt", timeout)
         if robots and robots.status == 200 and "<html" not in robots.body[:500].lower():
             entries = robots_entries(robots.body)
-            if entries:
+            pointers = robots_pointers(entries)
+            if pointers:
                 findings.append(Finding(self.name, svc.port, "robots.txt lists paths", "low",
                                         f"{base}/robots.txt", {"entries": entries[:50]}))
                 ctx.lead("web-robots", svc.port, "Visit the paths robots.txt asks crawlers to skip",
-                         f"robots.txt has {len(entries)} entr{'y' if len(entries) == 1 else 'ies'}, "
-                         f"starting with `{entries[0]}`.", f"curl -s {base}/robots.txt")
+                         f"robots.txt has {len(pointers)} specific entr{'y' if len(pointers) == 1 else 'ies'}, "
+                         f"starting with `{pointers[0]}`.", f"curl -s {base}/robots.txt")
+            else:
+                # `Disallow: /` (or nothing) only says "don't crawl this site" - no path to chase.
+                what = "only blocks the whole site" if entries else "has no entries"
+                findings.append(Finding(self.name, svc.port, f"robots.txt {what}", "info",
+                                        f"{base}/robots.txt", {"entries": entries[:50]} if entries else {}))
 
         git = fetch(base + "/.git/HEAD", timeout)
         if git and git.status == 200 and git.body.lstrip().startswith("ref:"):
