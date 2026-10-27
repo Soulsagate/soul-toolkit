@@ -522,7 +522,8 @@ class WebModule(Module):
 
         findings: list[Finding] = []
         if hits:
-            ctx.log.ok(f"{svc.label} web: {len(hits)} path(s) found" + (f" (+{hidden} stock 403s hidden)" if hidden else ""))
+            note = f" (+{hidden} stock 403s hidden)" if hidden else ""
+            ctx.log.ok(f"{svc.label} web: {len(hits)} path(s) found{note}")
             findings.append(Finding(self.name, svc.port, f"Content discovery: {len(hits)} path(s)", "info",
                                     detail, {"paths": hits, "extensions": exts, "recursed": recursed,
                                              "hidden_default_deny": hidden}))

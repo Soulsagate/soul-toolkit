@@ -50,8 +50,10 @@ install commands that work on every major distro, and runs that tell you where y
     (`OpenSSH 2.3 < 7.7` covers 7.2p2; `Apache + PHP < 5.3.12` is PHP's range, not httpd's).
     Unconfirmed matches become a low-ranked "check whether these really apply" lead, confirmed
     username-enumeration a weak one, and only confirmed code execution stays near the top.
-- Interesting web paths: Apache's stock 403s (`.ht*`, `server-status`) are no longer listed or
-  used as the lead, and paths you can open (2xx, then directories) come first.
+- Apache's stock 403s (`.ht*`, `server-status`) are hidden from the content-discovery table and
+  never used as an "interesting path" lead (on a real box they were half of a 70-row table); the
+  report says how many were hidden, and the raw gobuster files still have them. Paths you can open
+  (2xx, then directories) come first.
 
 ## 0.2.0 - 2026-10-27
 
