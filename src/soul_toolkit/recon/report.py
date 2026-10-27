@@ -172,7 +172,16 @@ def _finding_body(data: dict) -> str:
         rows = ["| Share | Type | Comment |", "|---|---|---|"]
         rows += [f"| `{s['name']}` | {s['type']} | {_cell(s['comment'])} |" for s in data["shares"]]
         return "\n".join(rows)
-    return ""
+    # Generic shapes any module can use: {"table": {"headers": [...], "rows": [[...]]}} and/or {"lines": [...]}
+    parts = []
+    if "table" in data:
+        tbl = data["table"]
+        rows = ["| " + " | ".join(_cell(h) for h in tbl["headers"]) + " |", "|" + "---|" * len(tbl["headers"])]
+        rows += ["| " + " | ".join(_cell(str(c)) for c in row) + " |" for row in tbl["rows"]]
+        parts.append("\n".join(rows))
+    if "lines" in data:
+        parts.append(_fence("\n".join(data["lines"])))
+    return "\n\n".join(parts)
 
 
 def scrub(text: str) -> str:

@@ -32,6 +32,7 @@ It runs recon in stages, and each stage decides what the next one does:
 | `ftp` | FTP | anonymous login check + root listing (nothing is downloaded), known-backdoor version check |
 | `ssh` | SSH | version notes (e.g. CVE-2018-15473 user enumeration on OpenSSH ≤ 7.7) |
 | `smb` | 139 / 445 | null-session share listing via `smbclient`, message-signing check |
+| `nfs` | NFS (2049 / mountd) | `showmount -e` export listing; exports open to everyone are flagged with a ready read-only `mount` command |
 | `exploits` | any service with a product + version | `searchsploit` lookup, deduped across ports, top matches with EDB-IDs (remote exploits first) |
 
 Each module is one small file in [`src/soul_toolkit/recon/modules/`](src/soul_toolkit/recon/modules/). Adding a service = one class with `matches()` and `run()`.
@@ -73,6 +74,7 @@ Requires **Python 3.9+** and **Linux**. The toolkit wraps existing tools rather 
 | `gobuster` | `web` content discovery | `sudo pacman -S gobuster` | `sudo apt install gobuster` |
 | `ffuf` | `web` vhost fuzzing (falls back to gobuster) | `sudo pacman -S ffuf` | `sudo apt install ffuf` |
 | `smbclient` | `smb` share listing | `sudo pacman -S smbclient` | `sudo apt install smbclient` |
+| `showmount` | `nfs` export listing | `sudo pacman -S nfs-utils` | `sudo apt install nfs-common` |
 | `searchsploit` | `exploits` lookups | `yay -S exploitdb` | `sudo apt install exploitdb` |
 | SecLists | better wordlists (optional) | `yay -S seclists` | `sudo apt install seclists` |
 

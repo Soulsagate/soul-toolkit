@@ -141,7 +141,12 @@ def _finding_body(data: dict) -> str:
     if "shares" in data:
         rows = [[f"<code>{_e(s['name'])}</code>", _e(s["type"]), _e(s["comment"])] for s in data["shares"]]
         return _table(["Share", "Type", "Comment"], rows)
-    return ""
+    out = ""
+    if "table" in data:
+        out += _table(data["table"]["headers"], [[_e(c) for c in row] for row in data["table"]["rows"]])
+    if "lines" in data:
+        out += _pre("\n".join(data["lines"]))
+    return out
 
 
 def _finding(f: Finding) -> str:

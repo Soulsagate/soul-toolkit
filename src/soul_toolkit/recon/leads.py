@@ -19,6 +19,7 @@ SCORES: dict[str, int] = {
     "ftp-fsroot": 95,            # anonymous FTP rooted at /
     "web-git": 90,               # source code + history
     "ftp-webroot": 88,           # anonymous FTP that looks like the web root
+    "nfs-world": 90,             # NFS export anyone can mount
     "ftp-anon": 85,              # anonymous FTP with files
     "exploit-rce": 80,           # Exploit-DB has a remote code/command execution match
     "smb-share": 75,             # a readable-looking share via null session
@@ -28,6 +29,7 @@ SCORES: dict[str, int] = {
     "web-paths": 60,             # interesting paths from content discovery
     "web-wordpress": 60,
     "ftp-writable": 55,
+    "nfs-restricted": 50,        # NFS export limited to some client IPs
     "web-robots": 45,
     "smb-enum": 40,              # SMB answers but no share listing
     "exploit-local": 25,         # only local/DoS matches - useful after a foothold
