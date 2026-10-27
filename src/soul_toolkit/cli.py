@@ -148,6 +148,23 @@ def cmd_recon(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- doctor
+
+
+def add_doctor_parser(sub: argparse._SubParsersAction) -> None:
+    p = sub.add_parser("doctor", help="check which external tools are installed and how to install the rest",
+                       description="Check every external tool recon uses, what each enables, and print the "
+                                   "install commands for Arch, Debian/Kali and macOS.")
+    p.add_argument("--all", action="store_true", help="print install commands for every tool, not just missing ones")
+    p.set_defaults(func=cmd_doctor)
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    from soul_toolkit.doctor import run_doctor
+
+    return run_doctor(show_all=args.all)
+
+
 # --------------------------------------------------------------------------- main
 
 
@@ -159,6 +176,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"soul-toolkit {__version__}")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
     add_recon_parser(sub)
+    add_doctor_parser(sub)
     return parser
 
 

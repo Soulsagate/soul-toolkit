@@ -89,6 +89,14 @@ Requires **Python 3.9+** and **Linux**. The toolkit wraps existing tools rather 
 
 Missing optional tools are skipped with a warning, not a crash.
 
+Not sure what you have? `toolkit doctor` checks every tool, says what each one enables, and prints
+the install commands for what's missing (Arch, Debian/Kali and macOS; your platform first):
+
+```bash
+toolkit doctor          # what's installed, what's missing
+toolkit doctor --all    # install commands for everything (setting up a new machine)
+```
+
 ```bash
 git clone https://github.com/Soulsagate/soul-toolkit.git
 cd soul-toolkit
