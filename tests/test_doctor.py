@@ -37,6 +37,11 @@ def test_every_tool_has_three_platforms():
         for pkg in (t.arch, t.debian, t.macos):
             assert pkg[0] in ("pacman", "aur", "apt", "brew", "builtin", "none")
     assert [t.binary for t in doctor.TOOLS if t.required] == ["nmap"]
+    # a "none" note is printed as a bare "# ..." line, so it has to say which tool it's about
+    for t in doctor.TOOLS:
+        for mgr, note in (t.arch, t.debian, t.macos):
+            if mgr == "none":
+                assert note.startswith(f"{t.binary}:"), note
 
 
 def test_all_present(monkeypatch):

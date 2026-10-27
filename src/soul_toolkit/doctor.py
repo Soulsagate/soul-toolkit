@@ -40,7 +40,7 @@ TOOLS: tuple[Tool, ...] = (
     Tool("snmpwalk", False, "snmp: community check, system info, process arguments, users",
          ("pacman", "net-snmp"), ("apt", "snmp"), ("brew", "net-snmp")),
     Tool("onesixtyone", False, "snmp: faster community check (snmpwalk is used without it)",
-         ("aur", "onesixtyone"), ("apt", "onesixtyone"), ("none", "not needed - snmpwalk covers it")),
+         ("aur", "onesixtyone"), ("apt", "onesixtyone"), ("none", "onesixtyone: not needed, snmpwalk covers it")),
 )
 
 PLATFORMS = {
