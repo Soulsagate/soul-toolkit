@@ -30,6 +30,7 @@ SCORES: dict[str, int] = {
     "web-wordpress": 60,
     "ftp-writable": 55,
     "nfs-restricted": 50,        # NFS export limited to some client IPs
+    "smtp-vrfy": 50,             # SMTP VRFY/EXPN enumerate usernames
     "web-robots": 45,
     "smb-enum": 40,              # SMB answers but no share listing
     "exploit-local": 25,         # only local/DoS matches - useful after a foothold
