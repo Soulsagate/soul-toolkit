@@ -271,10 +271,17 @@ Reports replace your home directory with `~`, so they're safe to paste into writ
 
 ```bash
 pip install -e '.[dev]'
-pytest
+ruff check .
+pytest -q
 ```
 
-Tests use a recorded nmap XML fixture and throwaway servers on `127.0.0.1`, so they run anywhere without touching real targets.
+Tests use recorded tool output and throwaway servers on `127.0.0.1`, so they run anywhere without
+touching real targets; tests that need a real tool skip when it isn't installed. CI runs the same
+on Python 3.9-3.13.
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) - ground rules and workflow
+- [docs/writing-a-module.md](docs/writing-a-module.md) - add a service module, step by step
+- [CHANGELOG.md](CHANGELOG.md) - what changed in each version
 
 ## Roadmap
 
@@ -283,7 +290,7 @@ Tests use a recorded nmap XML fixture and throwaway servers on `127.0.0.1`, so t
 - `scan` - raw-socket port scanner
 - `privesc` - Linux privilege-escalation enumeration (sudo -l, SUID, cron, writable paths)
 - `report` - log commands and screenshots during a box, export an engagement report
-- `web` - vhost brute-forcing and header analysis
+- `web` - deeper web checks (headers, CMS-specific enumeration)
 - `hash`, `wordlist`, `shell`, `loot`, `vpn`
 
 ## License
