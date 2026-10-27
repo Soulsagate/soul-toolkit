@@ -57,6 +57,9 @@ can use straight away, and covers a lot more services.
 - gobuster 3.8 compatibility (`--no-progress` instead of `-z`; vhost results without the
   `Found:` prefix).
 - A path is listed once even when gobuster prints it twice.
+- Anonymous FTP is still reported (with a "list it by hand" lead) when login works but the
+  directory listing fails, e.g. passive mode blocked.
+- Writeup tags fold NFS's RPC helper services (mountd, nlockmgr, rquotad...) into one `nfs` tag.
 
 ## 0.1.0 - 2026-10-27
 
