@@ -1,9 +1,10 @@
 # soul-toolkit
 
 [![CI](https://github.com/Soulsagate/soul-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Soulsagate/soul-toolkit/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/soul-toolkit)](https://pypi.org/project/soul-toolkit/)
 ![Python 3.9-3.13](https://img.shields.io/badge/python-3.9%E2%80%933.13-blue)
 ![No dependencies](https://img.shields.io/badge/dependencies-none%20(stdlib%20only)-brightgreen)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/Soulsagate/soul-toolkit/blob/main/LICENSE)
 
 A recon tool for **authorized** labs, CTFs and TryHackMe / Hack The Box boxes, built for people
 who are still learning what to do with a port list.
@@ -17,7 +18,7 @@ notes vault.
 > permission to test. Read [DISCLAIMER.md](https://github.com/Soulsagate/soul-toolkit/blob/main/DISCLAIMER.md).
 
 ```bash
-pipx install git+https://github.com/Soulsagate/soul-toolkit
+pipx install soul-toolkit
 toolkit doctor                           # what's installed, how to get the rest
 sudo "$(which toolkit)" recon 10.10.42.17
 ```
@@ -219,10 +220,13 @@ should work but isn't tested. No Python dependencies beyond the standard library
 **pipx** (recommended) - installs into its own environment and puts `toolkit` on your PATH:
 
 ```bash
-pipx install git+https://github.com/Soulsagate/soul-toolkit
+pipx install soul-toolkit
 toolkit doctor                      # what's installed, what's missing
-pipx reinstall soul-toolkit         # update to the latest version later
+pipx upgrade soul-toolkit           # update to the latest release later
 ```
+
+Want the newest unreleased code from `main` instead?
+`pipx install git+https://github.com/Soulsagate/soul-toolkit`.
 
 No pipx yet? `sudo apt install pipx` (Kali/Debian), `sudo pacman -S python-pipx` (Arch) or
 `brew install pipx` (macOS), then `pipx ensurepath`.

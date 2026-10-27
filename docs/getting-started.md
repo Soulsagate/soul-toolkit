@@ -74,11 +74,12 @@ on your PATH. It's the cleanest way to install soul-toolkit.
 ```bash
 pipx ensurepath          # one-time: adds ~/.local/bin to your PATH
 exec $SHELL              # reload your shell (or open a new terminal)
-pipx install git+https://github.com/Soulsagate/soul-toolkit
+pipx install soul-toolkit
 ```
 
-To install a specific release instead of the latest code, add the tag:
-`pipx install git+https://github.com/Soulsagate/soul-toolkit@v0.3.0`.
+That installs the latest release from PyPI. For a specific version, use
+`pipx install soul-toolkit==0.3.2`. For the newest unreleased code from GitHub, use
+`pipx install git+https://github.com/Soulsagate/soul-toolkit`.
 
 ### Step 3: check the setup
 
@@ -216,10 +217,13 @@ For every setting, see `toolkit recon --help` and the README's
 ## 6. Updating and uninstalling
 
 ```bash
-pipx reinstall soul-toolkit        # update to the latest version
+pipx upgrade soul-toolkit          # update to the latest release
 toolkit --version                  # check which version you have
 pipx uninstall soul-toolkit        # remove it
 ```
+
+Installed it from GitHub before version 0.3.2? Switch to the PyPI release once with
+`pipx install --force soul-toolkit`; after that, `pipx upgrade soul-toolkit` keeps it current.
 
 ---
 

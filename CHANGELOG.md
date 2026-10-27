@@ -6,6 +6,13 @@ All notable changes to this project. The format is based on
 
 ## Unreleased
 
+### Changed
+
+- Install and update instructions use PyPI now that 0.3.2 is there: `pipx install soul-toolkit`
+  and `pipx upgrade soul-toolkit`. The GitHub install is still documented for unreleased code,
+  and the guide shows how to switch an older GitHub install over (`pipx install --force
+  soul-toolkit`). The README has a PyPI version badge.
+
 ## 0.3.2 - 2026-10-27
 
 ### Added
