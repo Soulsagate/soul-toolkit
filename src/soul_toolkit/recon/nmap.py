@@ -81,6 +81,37 @@ def build_service_scan(
     return cmd
 
 
+def _udp_base(target: str, skip_ping: bool) -> list[str]:
+    cmd = ["nmap", "-sU", "-T4", "--open", "-oX", "-"]
+    if skip_ping:
+        cmd.append("-Pn")
+    if is_ipv6(target):
+        cmd.append("-6")
+    return cmd
+
+
+def build_udp_sweep(target: str, *, top: int = 100, min_rate: int | None = 1000, skip_ping: bool = True) -> list[str]:
+    """Top-N UDP ports. Needs root. Only ports that actually answer come back as 'open';
+    the many 'open|filtered' ones are ignored when parsing."""
+    cmd = [*_udp_base(target, skip_ping), "--top-ports", str(top)]
+    if min_rate:
+        cmd += ["--min-rate", str(min_rate)]
+    cmd.append(target)
+    return cmd
+
+
+def build_udp_service_scan(target: str, ports: Iterable[int], *, scripts: bool = True,
+                           skip_ping: bool = True) -> list[str]:
+    port_list = sorted(set(ports))
+    if not port_list:
+        raise ValueError("service scan needs at least one port")
+    cmd = [*_udp_base(target, skip_ping), "-sV"]
+    if scripts:
+        cmd.append("-sC")
+    cmd += ["-p", ",".join(str(p) for p in port_list), target]
+    return cmd
+
+
 def parse_ports(spec: str) -> list[int]:
     """Parse a user port spec like '22,80,8000-8010' into a sorted list."""
     ports: set[int] = set()

@@ -27,6 +27,7 @@ class ReconConfig:
     min_rate: int | None = 1000
     skip_ping: bool = True
     scripts: bool = True
+    udp: bool | None = None  # None = auto: on when root and no explicit -p
     modules: list[Module] | None = None
     options: Options = None  # type: ignore[assignment]
     writeup: bool = False
@@ -83,6 +84,16 @@ def run_recon(cfg: ReconConfig, log: Logger) -> HostResult:
         hand_back(sudo_owner(), outdir, cfg.output if base_created else None)
 
 
+def want_udp(cfg: ReconConfig, log: Logger) -> bool:
+    if cfg.udp is False:
+        return False
+    if not is_root():
+        if cfg.udp:
+            log.warn("UDP scans need root - skipping UDP. Run with sudo to include it.")
+        return False
+    return bool(cfg.udp) or not cfg.ports
+
+
 def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path) -> HostResult:
     result = HostResult(target=cfg.target, started=_now())
     t0 = time.monotonic()
@@ -90,54 +101,103 @@ def _run_stages(cfg: ReconConfig, log: Logger, outdir: Path) -> HostResult:
     syn = is_root()
     if not syn:
         log.warn("Not running as root: using TCP connect scans (-sT). Run with sudo for faster SYN scans.")
+    udp = want_udp(cfg, log)
+    total = 4 if udp else 3
+    stage = iter(range(1, total + 1))
 
-    # ---- Stage 1: port sweep ------------------------------------------------
+    # ---- TCP port sweep -----------------------------------------------------
     if cfg.ports:
         ports = cfg.ports
-        log.step(f"Stage 1/3: skipped, using {len(ports)} given port(s)")
+        log.step(f"Stage {next(stage)}/{total}: skipped, using {len(ports)} given port(s)")
     else:
         scope = "all 65535 TCP ports" if cfg.full else "top 1000 TCP ports"
-        log.step(f"Stage 1/3: port sweep ({scope})")
+        log.step(f"Stage {next(stage)}/{total}: port sweep ({scope})")
         cmd = nmap.build_port_sweep(cfg.target, syn=syn, full=cfg.full, min_rate=cfg.min_rate, skip_ping=cfg.skip_ping)
         sweep = _run_nmap(cmd, outdir / "nmap-ports.xml", result, log)
         host = sweep[0] if sweep else None
         ports = host.open_ports if host else []
         if host:
             result.status = host.status
-        if not ports:
+        if ports:
+            log.ok(f"Open ports: {', '.join(map(str, ports))}")
+        else:
             log.warn("No open TCP ports found.")
-            return _finish(cfg, result, outdir, t0, log)
-        log.ok(f"Open ports: {', '.join(map(str, ports))}")
 
-    # ---- Stage 2: service scan ----------------------------------------------
-    log.step(f"Stage 2/3: service/version scan on {len(ports)} port(s)")
-    cmd = nmap.build_service_scan(cfg.target, ports, syn=syn, scripts=cfg.scripts, skip_ping=cfg.skip_ping)
-    hosts = _run_nmap(cmd, outdir / "nmap-services.xml", result, log)
-    if hosts:
-        h = hosts[0]
-        result.address, result.hostnames, result.os_guess = h.address, h.hostnames, h.os_guess
-        result.status = h.status
-        result.services = h.services
-    for s in result.services:
-        log.info(f"  {s.label:<10} {s.name:<14} {s.banner}")
+    # ---- TCP service scan ---------------------------------------------------
+    if ports:
+        log.step(f"Stage {next(stage)}/{total}: service/version scan on {len(ports)} port(s)")
+        cmd = nmap.build_service_scan(cfg.target, ports, syn=syn, scripts=cfg.scripts, skip_ping=cfg.skip_ping)
+        hosts = _run_nmap(cmd, outdir / "nmap-services.xml", result, log)
+        if hosts:
+            h = hosts[0]
+            result.address, result.hostnames, result.os_guess = h.address, h.hostnames, h.os_guess
+            result.status = h.status
+            result.services = h.services
+        for s in result.services:
+            log.info(f"  {s.label:<10} {s.name:<14} {s.banner}")
+    else:
+        log.step(f"Stage {next(stage)}/{total}: service scan skipped (no open TCP ports)")
 
-    # ---- Stage 3: service modules -------------------------------------------
+    # ---- UDP (root only) ----------------------------------------------------
+    if udp:
+        log.step(f"Stage {next(stage)}/{total}: UDP scan (top 100 ports)")
+        _udp_stage(cfg, result, outdir, log)
+
+    if not result.services:
+        return _finish(cfg, result, outdir, t0, log)
+
+    # ---- Service modules ----------------------------------------------------
     modules = cfg.modules if cfg.modules is not None else []
-    log.step(f"Stage 3/3: service modules ({', '.join(m.name for m in modules) or 'none'})")
+    log.step(f"Stage {next(stage)}/{total}: service modules ({', '.join(m.name for m in modules) or 'none'})")
     ctx = Context(target=cfg.target, outdir=outdir, log=log, result=result, options=cfg.options)
     for svc in result.services:
         for mod in modules:
-            if not mod.matches(svc):
+            if svc.protocol not in mod.protocols or not mod.matches(svc):
                 continue
+            before = {id(x) for x in result.leads}
             try:
-                result.findings.extend(mod.run(ctx, svc))
+                found = mod.run(ctx, svc)
             except KeyboardInterrupt:
                 raise
             except Exception as exc:  # one broken module must not kill the whole run
                 log.error(f"{svc.label} {mod.name}: module crashed: {exc}")
-                result.findings.append(Finding(mod.name, svc.port, "Module error", "info", repr(exc)))
+                found = [Finding(mod.name, svc.port, "Module error", "info", repr(exc))]
+            # Modules only know port numbers; stamp the protocol onto what they produced.
+            for f in found:
+                f.protocol = svc.protocol
+            for lead in result.leads:
+                if id(lead) not in before:
+                    lead.protocol = svc.protocol
+            result.findings.extend(found)
 
     return _finish(cfg, result, outdir, t0, log)
+
+
+def _udp_stage(cfg: ReconConfig, result: HostResult, outdir: Path, log: Logger) -> None:
+    """Top-100 UDP sweep, then -sV/-sC on whatever answered. A UDP failure never ends the run."""
+    try:
+        cmd = nmap.build_udp_sweep(cfg.target, min_rate=cfg.min_rate, skip_ping=cfg.skip_ping)
+        sweep = _run_nmap(cmd, outdir / "nmap-udp.xml", result, log)
+        result.udp_scanned = True
+        ports = sweep[0].open_ports if sweep else []
+        if not ports:
+            log.info("  no UDP ports answered (open|filtered ports aren't reported)")
+            return
+        log.ok(f"Open UDP ports: {', '.join(map(str, ports))}")
+        cmd = nmap.build_udp_service_scan(cfg.target, ports, scripts=cfg.scripts, skip_ping=cfg.skip_ping)
+        hosts = _run_nmap(cmd, outdir / "nmap-udp-services.xml", result, log)
+    except nmap.NmapError as exc:
+        log.warn(f"UDP scan failed, continuing with TCP results: {exc}")
+        return
+    if not hosts:
+        return
+    h = hosts[0]
+    if not result.address:
+        result.address, result.hostnames, result.status = h.address, h.hostnames, h.status
+    udp = [s for s in h.services if s.protocol == "udp"]
+    for s in udp:
+        log.info(f"  {s.label:<10} {s.name:<14} {s.banner}")
+    result.services += udp
 
 
 def print_where_to_start(result: HostResult, log: Logger) -> None:
@@ -166,7 +226,8 @@ def _run_nmap(cmd: list[str], xml_path: Path, result: HostResult, log: Logger) -
 def _finish(cfg: ReconConfig, result: HostResult, outdir: Path, t0: float, log: Logger) -> HostResult:
     result.duration = time.monotonic() - t0
     result.finished = _now()
-    result.leads = leads.rank(result.leads + leads.host_leads(result, quick=not cfg.full, ports_given=bool(cfg.ports)))
+    host = leads.host_leads(result, quick=not cfg.full, ports_given=bool(cfg.ports), suggest_udp=cfg.udp is not False)
+    result.leads = leads.rank(result.leads + host)
     md, js = write_reports(result, outdir)
     high = sum(1 for f in result.findings if f.severity in ("high", "medium"))
     log.ok(f"Done in {result.duration:.0f}s - {len(result.services)} open port(s), "

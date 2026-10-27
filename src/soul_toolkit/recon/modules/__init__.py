@@ -62,6 +62,7 @@ class Context:
 class Module:
     name = "base"
     description = ""
+    protocols: tuple[str, ...] = ("tcp",)  # the engine only offers services on these protocols
 
     def matches(self, svc: Service) -> bool:  # pragma: no cover - abstract
         raise NotImplementedError

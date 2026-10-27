@@ -149,7 +149,7 @@ def _finding(f: Finding) -> str:
     detail = f"<p>{_md(f.detail)}</p>" if f.detail else ""
     return (f'<details class="finding sev-{f.severity}"{opened}><summary>'
             f'<span class="badge sev-{f.severity}">{f.severity}</span>{_e(f.title)} '
-            f'<span class="where">{f.port}/tcp · {_e(f.module)}</span></summary>'
+            f'<span class="where">{f.port}/{_e(f.protocol)} · {_e(f.module)}</span></summary>'
             f"<div>{detail}{_finding_body(f.data)}</div></details>")
 
 

@@ -42,6 +42,10 @@ def add_recon_parser(sub: argparse._SubParsersAction) -> None:
     scan.add_argument("--ping", action="store_true",
                       help="do host discovery (default is -Pn, since lab boxes often drop ping)")
     scan.add_argument("--no-scripts", action="store_true", help="skip nmap default scripts (-sC)")
+    udp = scan.add_mutually_exclusive_group()
+    udp.add_argument("--udp", dest="udp", action="store_true", default=None,
+                     help="scan the top 100 UDP ports (needs root; on by default as root unless -p is given)")
+    udp.add_argument("--no-udp", dest="udp", action="store_false", help="never scan UDP")
 
     mods = p.add_argument_group("modules")
     mods.add_argument("-m", "--modules", help="comma-separated modules to run (default: all)")
@@ -108,6 +112,7 @@ def cmd_recon(args: argparse.Namespace) -> int:
         min_rate=args.min_rate or None,
         skip_ping=not args.ping,
         scripts=not args.no_scripts,
+        udp=args.udp,
         modules=modules,
         writeup=args.writeup or bool(args.room),
         room=args.room,

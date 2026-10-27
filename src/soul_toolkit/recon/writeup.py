@@ -105,7 +105,7 @@ def render_writeup(r: HostResult, room: str | None = None, today: date | None = 
     if notable:
         for f in notable:
             detail = f" - {f.detail.splitlines()[0]}" if f.detail else ""
-            add(f"- {_EMOJI[f.severity]} **{f.title}** ({f.port}/tcp){detail}")
+            add(f"- {_EMOJI[f.severity]} **{f.title}** ({f.port}/{f.protocol}){detail}")
     else:
         add("_Nothing medium or high from automated recon._")
     add("")

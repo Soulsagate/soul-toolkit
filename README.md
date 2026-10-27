@@ -20,8 +20,9 @@ It runs recon in stages, and each stage decides what the next one does:
 |---|---|
 | 1. Port sweep | `nmap` across all 65535 TCP ports (or top 1000 with `--quick`) |
 | 2. Service scan | `nmap -sV -sC` on only the open ports |
-| 3. Service modules | follow-ups chosen per service (see below) |
-| 4. Report | `report.md` + `report.html` + `findings.json`: a ranked **Where to start** list (best leads across all services, each with why and a copy-paste command), then findings by severity |
+| 3. UDP scan | top 100 UDP ports, then `-sV -sC` on the ones that answer (root only: on by default under sudo unless `-p` is given; `--udp` / `--no-udp`) |
+| 4. Service modules | follow-ups chosen per service (see below) |
+| 5. Report | `report.md` + `report.html` + `findings.json`: a ranked **Where to start** list (best leads across all services, each with why and a copy-paste command), then findings by severity |
 
 ### Service modules
 
@@ -108,6 +109,7 @@ scanning:
   --min-rate N            nmap --min-rate for the sweep (default 1000, 0 = nmap default)
   --ping                  do host discovery (default is -Pn; lab boxes often drop ping)
   --no-scripts            skip nmap default scripts (-sC)
+  --udp / --no-udp        force / skip the top-100 UDP scan (default: on as root unless -p is given)
 
 modules:
   -m, --modules LIST      only run these modules (e.g. web,ftp)
@@ -160,6 +162,8 @@ results/<target>/
 ├── writeup.md           # with --writeup: frontmatter, Recon filled in, empty Foothold/PrivEsc/Flags
 ├── nmap-ports.xml       # raw stage 1 output
 ├── nmap-services.xml    # raw stage 2 output
+├── nmap-udp.xml         # raw UDP sweep (root only)
+├── nmap-udp-services.xml  # raw UDP service scan
 ├── gobuster-<port>.txt  # raw gobuster output per web port
 ├── gobuster-<port>-<dir>.txt  # one per directory recursed into
 └── vhosts-<port>.json   # raw ffuf vhost results (.txt when gobuster was used)

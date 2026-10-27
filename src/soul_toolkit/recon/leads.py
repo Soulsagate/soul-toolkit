@@ -33,6 +33,7 @@ SCORES: dict[str, int] = {
     "exploit-local": 25,         # only local/DoS matches - useful after a foothold
     "web-browse": 20,
     "rescan": 15,                # the scan itself was limited
+    "udp": 12,                   # UDP wasn't scanned
     "ssh-later": 10,
 }
 
@@ -44,9 +45,15 @@ def score_for(kind: str) -> int:
         raise ValueError(f"unknown lead kind {kind!r}; add it to SCORES in recon/leads.py") from None
 
 
-def host_leads(r: HostResult, *, quick: bool = False, ports_given: bool = False) -> list[Lead]:
+def host_leads(r: HostResult, *, quick: bool = False, ports_given: bool = False,
+               suggest_udp: bool = False) -> list[Lead]:
     """Leads that come from the scan as a whole rather than one service."""
     out: list[Lead] = []
+    if suggest_udp and not r.udp_scanned:
+        out.append(Lead("udp", 0, "Scan the top 100 UDP ports",
+                        "UDP wasn't scanned (it needs root, and is skipped by default with -p). "
+                        "SNMP, TFTP and NFS-related services live there.",
+                        f'sudo "$(which toolkit)" recon {r.target} --udp', score_for("udp")))
     if quick or ports_given:
         what = "the top 1000 ports" if quick and not ports_given else "only the ports you gave"
         out.append(Lead("rescan", 0, "Sweep all 65535 TCP ports",

@@ -115,7 +115,7 @@ def test_engine_ranks_leads_and_prints_where_to_start(tmp_path, monkeypatch, cap
     cfg = engine.ReconConfig(target="10.10.10.10", output=tmp_path, ports=[21, 22],
                              modules=select_modules(["ftp", "ssh"]))
     result = engine.run_recon(cfg, Logger(colour=False))
-    assert [x.kind for x in result.leads] == ["ftp-anon", "rescan", "ssh-later"]
+    assert [x.kind for x in result.leads] == ["ftp-anon", "rescan", "udp", "ssh-later"]
     err = capsys.readouterr().err
     assert "Where to start:" in err and "1. Download everything from anonymous FTP (21/tcp)" in err
     assert "$ wget -m ftp://anonymous:anonymous@10.10.10.10/" in err

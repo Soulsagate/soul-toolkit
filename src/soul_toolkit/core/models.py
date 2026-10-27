@@ -55,6 +55,7 @@ class Finding:
     severity: str = "info"
     detail: str = ""
     data: dict[str, Any] = field(default_factory=dict)
+    protocol: str = "tcp"  # set by the engine from the service the module ran on
 
     def __post_init__(self) -> None:
         if self.severity not in SEVERITIES:
@@ -75,10 +76,11 @@ class Lead:
     why: str
     command: str = ""
     score: int = 0
+    protocol: str = "tcp"
 
     @property
     def where(self) -> str:
-        return f"{self.port}/tcp" if self.port else "host"
+        return f"{self.port}/{self.protocol}" if self.port else "host"
 
 
 @dataclass
@@ -93,6 +95,7 @@ class HostResult:
     hints: list[str] = field(default_factory=list)
     leads: list[Lead] = field(default_factory=list)
     commands: list[str] = field(default_factory=list)
+    udp_scanned: bool = False
     started: str = ""
     finished: str = ""
     duration: float = 0.0

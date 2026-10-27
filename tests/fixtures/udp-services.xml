@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<!-- Trimmed from a real `nmap -sU -sV -sC -p 161` run against net-snmp on 127.0.0.1 (the process/netstat
+     script output was removed because it described the machine the test ran on). -->
+<nmaprun scanner="nmap" args="nmap -sU -T4 --open -oX - -Pn -sV -sC -p 161 127.0.0.1" start="1793093720" version="7.94SVN" xmloutputversion="1.05">
+<host>
+<status state="up" reason="user-set" reason_ttl="0"/>
+<address addr="127.0.0.1" addrtype="ipv4"/>
+<hostnames><hostname name="localhost" type="PTR"/></hostnames>
+<ports><port protocol="udp" portid="161"><state state="open" reason="udp-response" reason_ttl="64"/><service name="snmp" product="SNMPv1 server; net-snmp SNMPv3 server" extrainfo="public" hostname="lab-box" method="probed" conf="10"/><script id="snmp-info" output="&#xa;  enterprise: net-snmp&#xa;  engineIDFormat: unknown&#xa;  engineIDData: bba3bb775670e06a00000000&#xa;  snmpEngineBoots: 1&#xa;  snmpEngineTime: 2s"/><script id="snmp-sysdescr" output="Linux vm 6.18.44-fc-v165 #1 SMP PREEMPT_DYNAMIC @0 x86_64&#xa;  System uptime: 2.47s (247 timeticks)"/></port>
+</ports>
+</host>
+<runstats><finished time="1793093731" elapsed="11.00" exit="success"/><hosts up="1" down="0" total="1"/></runstats>
+</nmaprun>

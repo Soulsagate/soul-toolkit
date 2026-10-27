@@ -98,7 +98,7 @@ def render_markdown(r: HostResult) -> str:
         add("_No findings._")
         add("")
     for f in findings:
-        add(f"### {_BADGE[f.severity]} - {f.title} ({f.port}/tcp, `{f.module}`)")
+        add(f"### {_BADGE[f.severity]} - {f.title} ({f.port}/{f.protocol}, `{f.module}`)")
         add("")
         if f.detail:
             add(f.detail)
