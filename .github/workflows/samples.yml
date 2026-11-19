@@ -31,7 +31,7 @@ jobs:
         run: |
           sudo git clone -q --depth 1 https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb
           sudo ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit
-          searchsploit -h >/dev/null
+          searchsploit -j vsftpd | head -c 200   # -h exits 2, so check with a real lookup
       - name: Install the two SecLists wordlists recon looks for
         run: |
           base=https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery
@@ -47,7 +47,8 @@ jobs:
       - name: Build and start the lab
         timeout-minutes: 15
         run: |
-          docker compose -f tests/lab/docker-compose.yml up -d --build --progress plain
+          docker compose -f tests/lab/docker-compose.yml build --progress plain
+          docker compose -f tests/lab/docker-compose.yml up -d
           for i in $(seq 1 60); do nc -z 172.29.99.10 8080 && nc -z 172.29.99.10 2049 && break; sleep 2; done
       - name: Run recon against the lab
         run: |
