@@ -14,7 +14,9 @@ spec.loader.exec_module(rn)
 def test_notes_for_the_current_version():
     tag = f"v{__version__}"
     out = rn.notes(tag)
-    assert out.startswith(f"```bash\npipx install git+https://github.com/Soulsagate/soul-toolkit@{tag}\n```\n\n")
+    version = tag.lstrip("v")
+    assert out.startswith(f"```bash\npipx install soul-toolkit=={version}\n```\n\n"
+                          "Already installed? `pipx upgrade soul-toolkit`\n\n")
     assert f"## {__version__}" not in out  # heading left out: the release title already says it
     assert "](docs/" not in out            # relative links pinned to the tag
 

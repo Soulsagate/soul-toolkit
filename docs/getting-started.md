@@ -78,7 +78,7 @@ pipx install soul-toolkit
 ```
 
 That installs the latest release from PyPI. For a specific version, use
-`pipx install soul-toolkit==0.3.2`. For the newest unreleased code from GitHub, use
+`pipx install soul-toolkit==0.3.3`. For the newest unreleased code from GitHub, use
 `pipx install git+https://github.com/Soulsagate/soul-toolkit`.
 
 ### Step 3: check the setup

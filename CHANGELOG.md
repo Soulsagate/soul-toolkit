@@ -6,6 +6,8 @@ All notable changes to this project. The format is based on
 
 ## Unreleased
 
+## 0.3.3 - 2026-11-19
+
 ### Changed
 
 - Install and update instructions use PyPI now that 0.3.2 is there: `pipx install soul-toolkit`
@@ -13,6 +15,8 @@ All notable changes to this project. The format is based on
   and the guide shows how to switch an older GitHub install over (`pipx install --force
   soul-toolkit`). The README has a PyPI version badge.
 - Python 3.14 is tested in CI (3.9-3.14 now) and listed in the package metadata.
+- GitHub release notes now open with the PyPI install (`pipx install soul-toolkit==<version>`)
+  and `pipx upgrade soul-toolkit`, instead of a GitHub install line.
 
 ### Fixed
 

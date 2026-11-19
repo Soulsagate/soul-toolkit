@@ -45,7 +45,7 @@ def notes(tag: str, root: Path = ROOT) -> str:
     if not tag.startswith("v") or wrong:
         raise ValueError(f"tag {tag} doesn't match the code: {'; '.join(wrong) or 'tags look like v1.2.3'}")
     body = changelog_section((root / "CHANGELOG.md").read_text(encoding="utf-8"), version)
-    install = f"```bash\npipx install git+{REPO}@{tag}\n```"
+    install = f"```bash\npipx install soul-toolkit=={version}\n```\n\nAlready installed? `pipx upgrade soul-toolkit`"
     return f"{install}\n\n{absolute_links(body, tag)}\n"
 
 
