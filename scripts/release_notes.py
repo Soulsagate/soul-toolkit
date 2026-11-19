@@ -1,6 +1,6 @@
 """Print the GitHub release notes for a tag, built from CHANGELOG.md.
 
-    python3 scripts/release_notes.py v0.3.0 > notes.md
+    python3 scripts/release_notes.py v1.2.3 > notes.md
 
 Fails (exit 1) instead of printing anything when the tag doesn't match the version in
 pyproject.toml and src/soul_toolkit/__init__.py, or when CHANGELOG.md has no dated section for

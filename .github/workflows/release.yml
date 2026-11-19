@@ -1,6 +1,6 @@
 name: Release
 
-# Pushing a tag like v0.3.0 publishes a GitHub release whose notes are that version's
+# Pushing a tag like v1.2.3 publishes a GitHub release whose notes are that version's
 # CHANGELOG.md section, with the pipx install line on top. scripts/release_notes.py refuses
 # (and the job fails, so nothing is published) if the tag and the code disagree on the version.
 # Then the same version is uploaded to PyPI with trusted publishing: PyPI checks that the upload
