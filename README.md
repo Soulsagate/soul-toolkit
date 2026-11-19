@@ -46,10 +46,10 @@ which port happened to be scanned first - each with the command to run next. It'
 section of the report.
 
 ```
-[*] soul-toolkit v0.3.0 :: authorized targets only (see DISCLAIMER.md)
+[*] soul-toolkit v0.3.3 :: authorized targets only (see DISCLAIMER.md)
 [*] Target: 172.29.99.10
 [>] Stage 1/4: port sweep (all 65535 TCP ports)
-[+] Open ports: 21, 80, 111, 139, 445, 875, 2049, 8080, 20048, 33763
+[+] Open ports: 21, 80, 111, 139, 445, 875, 2049, 8080, 20048, 36981
 [>] Stage 2/4: service/version scan on 10 port(s)
 [*]   21/tcp     ftp            vsftpd 2.0.8 or later
 [*]   80/tcp     http           nginx 1.24.0 (Ubuntu)
@@ -60,31 +60,33 @@ section of the report.
 [*]   2049/tcp   nfs            3-4 (RPC #100003)
 [*]   8080/tcp   http           nginx 1.24.0 (Ubuntu)
 [*]   20048/tcp  mountd         1-3 (RPC #100005)
-[*]   33763/tcp  nlockmgr       4 (RPC #100021)
+[*]   36981/tcp  nlockmgr       4 (RPC #100021)
 [>] Stage 3/4: UDP scan (top 100 ports)
 [+] Open UDP ports: 111, 2049
 [*]   111/udp    rpcbind        2-4 (RPC #100000)
 [*]   2049/udp   nfs            3-4 (RPC #100003)
-[>] Stage 4/4: service modules (web, ftp, ssh, smb, nfs, smtp, snmp, mysql, postgres, redis, rdp, winrm, ldap, exploits)
+[>] Stage 4/4: service modules (web, ftp, ssh, smb, nfs, smtp, mail, snmp, mysql, postgres, redis, rdp, winrm, ldap, exploits)
 [*] 21/tcp ftp: checking anonymous login
+[*] 21/tcp exploits: searchsploit vsftpd 2.0.8
 [*] 80/tcp web: fingerprinting http://172.29.99.10
-[!] searchsploit not installed - skipping exploit lookups
-[*] 445/tcp smb: trying null-session share listing
-[*] 2049/tcp nfs: listing exports
 [+] 21/tcp ftp: anonymous login works
-[*] 8080/tcp web: fingerprinting http://172.29.99.10:8080
-[+] 2049/tcp nfs: 1 export(s), 1 open to everyone
 [*] 80/tcp web: gobuster with /usr/share/seclists/Discovery/Web-Content/common.txt
 [!] 80/tcp web: wildcard responses under http://172.29.99.10 (length 154), retrying with --exclude-length
-[*] 8080/tcp web: gobuster with /usr/share/seclists/Discovery/Web-Content/common.txt, -x html,txt (static HTML (page links))
-[+] 445/tcp smb: 2 share(s) listed, 1 readable
 [*] 80/tcp web: vhost fuzzing *.lab.thm with ffuf (/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt; filtering wildcard size 154)
 [+] 80/tcp web: 1 vhost(s) found: dev.lab.thm
 [+] 80/tcp web: add to /etc/hosts: 172.29.99.10 lab.thm dev.lab.thm
+[*] 445/tcp smb: trying null-session share listing
+[*] 80/tcp exploits: searchsploit nginx 1.24.0
+[+] 445/tcp smb: 2 share(s) listed, 1 readable
+[*] 2049/tcp nfs: listing exports
+[+] 2049/tcp nfs: 1 export(s), 1 open to everyone
+[*] 8080/tcp web: fingerprinting http://172.29.99.10:8080
+[*] 8080/tcp web: gobuster with /usr/share/seclists/Discovery/Web-Content/common.txt, -x html,txt (static HTML (page links))
+[*] 139/tcp exploits: searchsploit Samba 4.6.2
 [*] 8080/tcp web: recursing into /admin/
 [*] 8080/tcp web: recursing into /backup/
 [+] 8080/tcp web: 12 path(s) found
-[+] Done in 46s - 12 open port(s), 11 finding(s) (7 medium/high)
+[+] Done in 45s - 12 open port(s), 11 finding(s) (7 medium/high)
 [+] Where to start:
     1. Mount the NFS export /srv/nfs (read-only) (2049/tcp)
        $ sudo mkdir -p /mnt/nfs-srv-nfs && sudo mount -t nfs -o ro,nolock 172.29.99.10:/srv/nfs /mnt/nfs-srv-nfs
@@ -101,8 +103,8 @@ section of the report.
 ```
 
 <sub>Per-module progress lines (`[*] [3/12] 445/tcp smb finished in 0:00`) are trimmed from this
-excerpt. searchsploit wasn't installed on the machine that made this run, so the `exploits`
-module skipped itself - which is exactly what a missing optional tool does. The closing `Saved in:` /
+excerpt. searchsploit was installed and looked up every detected version; Exploit-DB has no
+matches for these ones, so the `exploits` module adds nothing here. The closing `Saved in:` /
 `open the report:` lines are trimmed too, since they show the folder on your own machine (see
 [Output](#output)).</sub>
 

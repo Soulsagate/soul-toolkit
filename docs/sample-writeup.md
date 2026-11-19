@@ -2,7 +2,7 @@
 title: "Soul Lab"
 room: "Soul Lab"
 target: "172.29.99.10"
-date: 2026-10-27
+date: 2026-11-19
 tags:
   - writeup
   - ftp
@@ -16,7 +16,7 @@ status: in-progress
 # Soul Lab
 
 > [!info] Target
-> `172.29.99.10` · recon by soul-toolkit v0.3.0 on 2026-10-27
+> `172.29.99.10` · recon by soul-toolkit v0.3.3 on 2026-11-19
 
 ## Recon
 
@@ -33,7 +33,7 @@ status: in-progress
 | 2049/tcp | nfs | 3-4 (RPC #100003) |
 | 8080/tcp | http | nginx 1.24.0 (Ubuntu) |
 | 20048/tcp | mountd | 1-3 (RPC #100005) |
-| 33763/tcp | nlockmgr | 4 (RPC #100021) |
+| 36981/tcp | nlockmgr | 4 (RPC #100021) |
 | 111/udp | rpcbind | 2-4 (RPC #100000) |
 | 2049/udp | nfs | 3-4 (RPC #100003) |
 
@@ -45,7 +45,7 @@ status: in-progress
 - 🟠 **Redirects to virtual host 'lab.thm'** (80/tcp) - GET / -> 302 http://lab.thm/
 - 🟠 **Virtual hosts found: dev.lab.thm** (80/tcp) - Add to /etc/hosts: `172.29.99.10 lab.thm dev.lab.thm`
 - 🟠 **Null session can list SMB shares** (445/tcp) - public, IPC$ - readable without a password: public
-- 🟠 **Interesting paths worth checking** (8080/tcp) - /login.html, /.git/config, /.git/index, /.git/HEAD, /admin/index.html, /backup/index.html, /.git, /admin, /backup, /.git/logs/
+- 🟠 **Interesting paths worth checking** (8080/tcp) - /login.html, /.git/HEAD, /.git/config, /.git/index, /admin/index.html, /backup/index.html, /.git, /admin, /backup, /.git/logs/
 
 ### Leads to try
 
@@ -57,12 +57,15 @@ status: in-progress
 
 > [!note]- Commands run during recon
 > `nmap -sS -T4 --open -oX - -Pn -p- --min-rate 1000 172.29.99.10`  
-> `nmap -sS -T4 --open -oX - -Pn -sV -sC -p 21,80,111,139,445,875,2049,8080,20048,33763 172.29.99.10`  
+> `nmap -sS -T4 --open -oX - -Pn -sV -sC -p 21,80,111,139,445,875,2049,8080,20048,36981 172.29.99.10`  
 > `nmap -sU -T4 --open -oX - -Pn --top-ports 100 --min-rate 1000 172.29.99.10`  
 > `nmap -sU -T4 --open -oX - -Pn -sV -sC -p 111,2049 172.29.99.10`  
+> `searchsploit --json --disable-colour -t vsftpd 2.0.8`  
 > `gobuster dir -u http://172.29.99.10 -w /usr/share/seclists/Discovery/Web-Content/common.txt -t 30 -q --no-progress --no-error --no-color --timeout 8s -o results/172.29.99.10/gobuster-80.txt`  
 > `gobuster dir -u http://172.29.99.10 -w /usr/share/seclists/Discovery/Web-Content/common.txt -t 30 -q --no-progress --no-error --no-color --timeout 8s -o results/172.29.99.10/gobuster-80.txt --exclude-length 154`  
 > `ffuf -u http://172.29.99.10/ -H 'Host: FUZZ.lab.thm' -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -t 30 -timeout 8 -maxtime 600 -of json -o results/172.29.99.10/vhosts-80.json -s -noninteractive -fs 154`  
+> `searchsploit --json --disable-colour -t nginx 1.24.0`  
+> `searchsploit --json --disable-colour -t Samba 4.6.2`  
 > `smbclient -L //172.29.99.10 -N -g -p 445`  
 > `smbclient //172.29.99.10/public -N -p 445 -c ls`  
 > `showmount -e 172.29.99.10`  
