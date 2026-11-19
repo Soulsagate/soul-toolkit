@@ -1,0 +1,65 @@
+# Regenerates the samples in docs/ from a real run: builds the lab, runs the released
+# soul-toolkit from PyPI against it, and uploads the console output and results as an artifact.
+# Run it by hand (Actions -> Samples -> Run workflow) after a release.
+name: Samples
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "soul-toolkit version from PyPI (empty = latest)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  samples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install the tools recon wraps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nmap gobuster ffuf smbclient nfs-common snmp
+      - name: Install searchsploit (Exploit-DB)
+        run: |
+          sudo git clone -q --depth 1 https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb
+          sudo ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit
+          searchsploit -h >/dev/null
+      - name: Install the two SecLists wordlists recon looks for
+        run: |
+          base=https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery
+          sudo mkdir -p /usr/share/seclists/Discovery/Web-Content /usr/share/seclists/Discovery/DNS
+          sudo curl -fsSL -o /usr/share/seclists/Discovery/Web-Content/common.txt "$base/Web-Content/common.txt"
+          sudo curl -fsSL -o /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt "$base/DNS/subdomains-top1million-5000.txt"
+      - name: Install soul-toolkit from PyPI
+        run: |
+          python -m pip install -q pipx
+          spec=soul-toolkit${{ inputs.version && format('=={0}', inputs.version) || '' }}
+          pipx install "$spec"
+          toolkit --version
+      - name: Build and start the lab
+        timeout-minutes: 15
+        run: |
+          docker compose -f tests/lab/docker-compose.yml up -d --build --progress plain
+          for i in $(seq 1 60); do nc -z 172.29.99.10 8080 && nc -z 172.29.99.10 2049 && break; sleep 2; done
+      - name: Run recon against the lab
+        run: |
+          cd ~
+          NO_COLOR=1 sudo -E "$(which toolkit)" recon 172.29.99.10 --writeup --room "Soul Lab" 2> console.txt
+          cat console.txt
+          mkdir -p ~/samples && cp console.txt ~/samples/ && cp -r results/172.29.99.10 ~/samples/results
+          toolkit --version > ~/samples/version.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: samples
+          path: ~/samples
+      - name: Stop the lab
+        if: always()
+        run: docker compose -f tests/lab/docker-compose.yml down -v || true
