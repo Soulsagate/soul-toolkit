@@ -55,6 +55,11 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq nmap gobuster ffuf smbclient nfs-common
       - run: pip install -e '.[dev]'
+      - name: Build the lab images
+        # Its own step so a slow or stuck build shows which container and line it's on;
+        # the test below then starts the lab from these cached images.
+        timeout-minutes: 15
+        run: docker compose -f tests/lab/docker-compose.yml build --progress plain
       - run: pytest -q -rs tests/test_lab.py
         env:
           SOUL_REQUIRE_LAB: "1"  # fail, don't skip, if Docker or a tool is missing
