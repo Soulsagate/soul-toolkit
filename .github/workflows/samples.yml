@@ -57,6 +57,16 @@ jobs:
           cat console.txt
           mkdir -p ~/samples && cp console.txt ~/samples/ && cp -r results/172.29.99.10 ~/samples/results
           toolkit --version > ~/samples/version.txt
+      - name: Record a colour run in a terminal (for docs/demo.gif)
+        # A second, separate run inside a pseudo-terminal, so the live status line and colours
+        # are real. `script --log-timing` keeps when each byte arrived, for replaying.
+        run: |
+          cd ~
+          tk="$(which toolkit)"
+          sudo -E TERM=xterm-256color script -q --log-timing ~/samples/timing.txt --log-out ~/samples/typescript.txt \
+            -c "stty cols 98 rows 30; $tk recon 172.29.99.10 -o rec --writeup --room 'Soul Lab'" > /dev/null
+          sudo chown -R "$USER" ~/samples
+          ls -la ~/samples
       - name: Print the samples into the log too (base64 tar between markers)
         # For tools that can read job logs but not artifact storage.
         run: |
