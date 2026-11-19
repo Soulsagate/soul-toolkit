@@ -57,6 +57,12 @@ jobs:
           cat console.txt
           mkdir -p ~/samples && cp console.txt ~/samples/ && cp -r results/172.29.99.10 ~/samples/results
           toolkit --version > ~/samples/version.txt
+      - name: Print the samples into the log too (base64 tar between markers)
+        # For tools that can read job logs but not artifact storage.
+        run: |
+          echo "=====SAMPLES-BEGIN====="
+          tar -C ~ -czf - samples | base64 -w 120
+          echo "=====SAMPLES-END====="
       - uses: actions/upload-artifact@v4
         with:
           name: samples
